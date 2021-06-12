@@ -1,15 +1,3 @@
-# FaultTolerantControl
-[FaultTolerantControl.jl] is a package for fault tolerant control (FTC).
-## Notes
-- This package is based on [FlightSims.jl](https://github.com/JinraeKim/FlightSims.jl),
-a general-purpose dynamical system simulator supporting nested environment design.
-
-## Examples
-### Nonlinear control
-Note that this example is **not an FTC**; an illustration of how to use this package.
-- For an example of **backstepping position tracking controller for quadcopters**,
-see `main/backstepping_tracking.jl`:
-```julia
 using FaultTolerantControl
 using FlightSims
 const FS = FlightSims
@@ -51,7 +39,3 @@ function main()
     mkpath(dir_log)
     savefig(p_traj, joinpath(dir_log, "traj_multicopter_backstepping.png"))
 end
-```
-![ex_screenshot](./figures/traj_multicopter_backstepping.png)
-
-### Fault tolerant control (To-do)

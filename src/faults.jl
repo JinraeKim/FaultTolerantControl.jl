@@ -3,8 +3,10 @@ abstract type AbstractActuatorFault <: AbstractFault end
 
 # API
 (fault::AbstractFault)(t, u) = error("Not implemented fault")
+
 # FaultSet
 FaultSet(args...) = AbstractFault[args...]
+
 # select_last
 """
 Select the last fault (concerning the applied time) among given faults.

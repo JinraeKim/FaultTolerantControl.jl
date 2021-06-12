@@ -4,17 +4,26 @@ module FaultTolerantControl
 # ERROR: Define the structure of state for your environment
 using Reexport
 @reexport using FlightSims
+import FlightSims: State, Params, Dynamics!, Dynamics, DatumFormat, Process  # `import` will help you to automatically extend the imported methods
+using DifferentialEquations
 using LinearAlgebra
-using UnPack
+using Transducers, UnPack, ComponentArrays
+import SplitApplyCombine
+import MatrixEquations
 
 # Fault
-export AbstractFault
+export AbstractFault, FaultSet
 export AbstractActuatorFault, LoE
 # FDI (fault detection and isoltion)
 export AbstractFDI, LPFFDI
+# allocator
+export PseudoInverseControlAllocator
+# controllers
+export BacksteppingPositionControllerEnv
 
-include("Fault.jl")
+include("faults.jl")
 include("FDI.jl")
+include("environments/environments.jl")
 
 
 end
