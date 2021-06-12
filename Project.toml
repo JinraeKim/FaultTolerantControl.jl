@@ -3,6 +3,12 @@ uuid = "45299f66-0548-4da8-9567-4dae0facc19d"
 authors = ["JinraeKim <kjl950403@gmail.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+FlightSims = "a4c2f6ca-3fbe-4430-8ede-32935de4c069"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
+
 [compat]
 julia = "1"
 
