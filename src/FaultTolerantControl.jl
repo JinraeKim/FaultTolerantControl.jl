@@ -22,7 +22,6 @@ export PseudoInverseControlAllocator
 export BacksteppingPositionControllerEnv
 
 include("faults.jl")
-include("FDI.jl")
 include("environments/environments.jl")
 
 

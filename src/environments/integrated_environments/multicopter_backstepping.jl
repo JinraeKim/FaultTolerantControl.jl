@@ -19,17 +19,19 @@ function command(controller::BacksteppingPositionControllerEnv, allocator::Pseud
     ComponentArray(νd=νd, Ṫd=Ṫd, u_cmd=u_cmd)
 end
 
-function Dynamics!(multicopter::MulticopterEnv,
+function Dynamics!(
+        multicopter::MulticopterEnv,
         controller::BacksteppingPositionControllerEnv,
-        allocator::PseudoInverseControlAllocator)
+        allocator::PseudoInverseControlAllocator,
+    )
     @unpack m, J, g = multicopter
-    return function (dx, x, p, t; pos_cmd=nothing)
+    return function (dx, x, p, t; pos_cmd=nothing, Λ)
         @unpack p, v, R, ω = x.multicopter
         @unpack ref_model, Td = x.controller
         xd, vd, ad, ȧd, äd = ref_model.x_0, ref_model.x_1, ref_model.x_2, ref_model.x_3, ref_model.x_4
         command_info = command(controller, allocator, p, v, R, ω, xd, vd, ad, ȧd, äd, Td, m, J, g)
         @unpack νd, Ṫd, u_cmd = command_info
-        Dynamics!(multicopter)(dx.multicopter, x.multicopter, (), t; u=u_cmd)
+        Dynamics!(multicopter)(dx.multicopter, x.multicopter, (), t; u=u_cmd, Λ=Λ)
         Dynamics!(controller)(dx.controller, x.controller, (), t; pos_cmd=pos_cmd, Ṫd=Ṫd)
         nothing
     end
@@ -110,15 +112,15 @@ function State(multicopter::GoodarziQuadcopterEnv, controller::BacksteppingPosit
     end
 end
 
-function Dynamics!(multicopter::GoodarziQuadcopterEnv, controller::BacksteppingPositionControllerEnv)
-    @unpack m, J, g = multicopter
-    return function (dx, x, p, t; pos_cmd=nothing)
-        @unpack p, v, R, ω = x.multicopter
-        @unpack ref_model, Td = x.controller
-        xd, vd, ad, ȧd, äd = ref_model.x_0, ref_model.x_1, ref_model.x_2, ref_model.x_3, ref_model.x_4
-        νd, Ṫd = command(controller)(p, v, R, ω, xd, vd, ad, ȧd, äd, Td, m, J, g)
-        Dynamics!(controller)(dx.controller, x.controller, (), t; pos_cmd=pos_cmd, Ṫd=Ṫd)
-        Dynamics!(multicopter)(dx.multicopter, x.multicopter, (), t; f=νd.f, M=νd.M)
-        nothing
-    end
-end
+# function Dynamics!(multicopter::GoodarziQuadcopterEnv, controller::BacksteppingPositionControllerEnv)
+#     @unpack m, J, g = multicopter
+#     return function (dx, x, p, t; pos_cmd=nothing)
+#         @unpack p, v, R, ω = x.multicopter
+#         @unpack ref_model, Td = x.controller
+#         xd, vd, ad, ȧd, äd = ref_model.x_0, ref_model.x_1, ref_model.x_2, ref_model.x_3, ref_model.x_4
+#         νd, Ṫd = command(controller)(p, v, R, ω, xd, vd, ad, ȧd, äd, Td, m, J, g)
+#         Dynamics!(controller)(dx.controller, x.controller, (), t; pos_cmd=pos_cmd, Ṫd=Ṫd)
+#         Dynamics!(multicopter)(dx.multicopter, x.multicopter, (), t; f=νd.f, M=νd.M)
+#         nothing
+#     end
+# end

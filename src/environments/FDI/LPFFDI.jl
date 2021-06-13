@@ -1,5 +1,3 @@
-abstract type AbstractFDI <: AbstractEnv end
-
 """
 Low pass filter (LPF) -like FDI.
 """
@@ -12,8 +10,8 @@ struct LPFFDI <: AbstractFDI
 end
 
 function State(fdi::LPFFDI)
-    return function (m::Int)
-        Λ̂ = Diagonal(ones(m)) |> Matrix  # if there is no `Matrix`, you may not able to assign off-diagonal elements.
+    return function (dim_input::Int)
+        Λ̂ = Diagonal(ones(dim_input))
     end
 end
 
