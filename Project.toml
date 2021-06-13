@@ -16,6 +16,8 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
 MatrixEquations = "1"
+ComponentArrays = "0.10"
+UnPack = "1"
 julia = "1"
 
 [extras]
