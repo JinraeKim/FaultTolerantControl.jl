@@ -1,9 +1,11 @@
 abstract type Multicopter_FDI_Faults <: AbstractEnv end
+
 struct Multicopter_DelayFDI_Faults <: Multicopter_FDI_Faults
     multicopter::MulticopterEnv
     fdi::DelayFDI
     faults::Vector{AbstractFault}
 end
+
 
 function State(env::Multicopter_DelayFDI_Faults)
     @unpack multicopter, fdi, faults = env
