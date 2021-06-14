@@ -1,4 +1,5 @@
 using FaultTolerantControl
+const FTC = FaultTolerantControl
 using LinearAlgebra
 using UnPack
 using Transducers
@@ -30,14 +31,14 @@ function test()
     fdi = DelayFDI(τ)
     index = 1
     faults = FaultSet(LoE(5.0, index, 0.5))
-    envs = (multicopter, fdi, faults)
-    x0 = State(envs...)()
+    env = FTC.Multicopter_DelayFDI_Faults(multicopter, fdi, faults)
+    x0 = State(env)()
     tf = 10.0
     prob, sol, df = sim(x0,
-                        apply_inputs(Dynamics!(envs...);
+                        apply_inputs(Dynamics!(env);
                                      u=zeros(6),
                                     );
-                        datum_format=DatumFormat(envs...),
+                        datum_format=DatumFormat(env),
                         savestep=0.01,
                         tf=tf)
     ts = df.time

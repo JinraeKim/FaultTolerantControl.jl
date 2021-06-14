@@ -1,18 +1,19 @@
-function State(
-        multicopter::MulticopterEnv,
-        fdi::DelayFDI,
-        faults::Vector{AbstractFault},
-    )
+abstract type Multicopter_FDI_Faults <: AbstractEnv end
+struct Multicopter_DelayFDI_Faults <: Multicopter_FDI_Faults
+    multicopter::MulticopterEnv
+    fdi::DelayFDI
+    faults::Vector{AbstractFault}
+end
+
+function State(env::Multicopter_DelayFDI_Faults)
+    @unpack multicopter, fdi, faults = env
     return function (; args_multicopter=())
         x0_multicopter = State(multicopter)(args_multicopter...)
     end
 end
 
-function Setup(
-        multicopter::MulticopterEnv,
-        fdi::DelayFDI,
-        faults::Vector{AbstractFault},
-    )
+function Setup(env::Multicopter_DelayFDI_Faults)
+    @unpack multicopter, fdi, faults = env
     @unpack dim_input = multicopter
     # actuator faults
     actuator_faults = faults |> Filter(fault -> typeof(fault) <: AbstractActuatorFault) |> collect
@@ -28,12 +29,9 @@ function Setup(
     (; Λ_func=Λ_func, Λ̂_func=Λ̂_func)
 end
 
-function Dynamics!(
-        multicopter::MulticopterEnv,
-        fdi::DelayFDI,
-        faults::Vector{AbstractFault},
-    )
-    setup_data = Setup(multicopter, fdi, faults)
+function Dynamics!(env::Multicopter_DelayFDI_Faults)
+    @unpack multicopter, fdi, faults = env
+    setup_data = Setup(env)
     @unpack Λ_func, Λ̂_func = setup_data
     return function (dX, X, p, t; u)
         Λ = Λ_func(t)
@@ -42,12 +40,9 @@ function Dynamics!(
     end
 end
 
-function DatumFormat(
-        multicopter::MulticopterEnv,
-        fdi::DelayFDI,
-        faults::Vector{AbstractFault},
-    )
-    setup_data = Setup(multicopter, fdi, faults)
+function DatumFormat(env::Multicopter_DelayFDI_Faults)
+    @unpack multicopter, fdi, faults = env
+    setup_data = Setup(env)
     @unpack Λ_func, Λ̂_func = setup_data
     return function (_X, t, integrator)
         X = copy(_X)
