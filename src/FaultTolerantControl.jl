@@ -15,14 +15,13 @@ import MatrixEquations
 export AbstractFault, FaultSet
 export AbstractActuatorFault, LoE
 # FDI (fault detection and isoltion)
-export AbstractFDI, LPFFDI
+export AbstractFDI, LPFFDI, DelayFDI
 # allocator
 export PseudoInverseControlAllocator
 # controllers
 export BacksteppingPositionControllerEnv
 
 include("faults.jl")
-include("FDI.jl")
 include("environments/environments.jl")
 
 

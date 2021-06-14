@@ -1,26 +1,19 @@
 """
-Common dynamics of MulticopterEnv.
+Dynamical equations with faults for MulticopterEnv.
 # Variables
 f ∈ R: total thrust
 M ∈ R^3: moment
+Λ: effectiveness matrix
 """
-function Dynamics!(env::MulticopterEnv;
-        faults::Vector{T} where T <: AbstractFault=AbstractFault[],
-    )
-    actuator_faults = faults |> Filter(fault -> typeof(fault) <: AbstractActuatorFault) |> collect
-    actuator_faults_groups = SplitApplyCombine.group(fault -> fault.index, actuator_faults)  # actuator_faults groups classified by fault index
-    return function (dX, X, p, t; u)
-        u_saturated = FlightSims.saturate(env, u)  # for manual saturation, extend this method
-        _u_faulted = u_saturated
-        # actuator faults
-        for actuator_faults_group in actuator_faults_groups
-            last_actuator_fault = select_last_before_t(actuator_faults_group, t)
-            _u_faulted = last_actuator_fault(t, _u_faulted)
-        end
-        u_faulted = _u_faulted
+function Dynamics!(multicopter::MulticopterEnv)
+    return function (dX, X, p, t; u, Λ)
+        @assert all(diag(Λ) .>= 0.0) && all(diag(Λ) .<= 1.0)
+        Λ = Matrix(Λ)  # to assign off-diagonal terms for diffeq (if Λ <: Diagonal)
+        u_saturated = FlightSims.saturate(multicopter, u)  # for manual saturation, extend this method
+        u_faulted = Λ * u_saturated
         # @show u_faulted ./ u_saturated, t  # for debugging
-        ν = FlightSims.input_to_force_moment(env, u_faulted)  # for manual input_to_force_moment transformation, extend this method
+        ν = FlightSims.input_to_force_moment(multicopter, u_faulted)  # for manual input_to_force_moment transformation, extend this method
         f, M = ν[1], ν[2:4]
-        FlightSims.__Dynamics!(env)(dX, X, p, t; f=f, M=M)
+        FlightSims.__Dynamics!(multicopter)(dX, X, p, t; f=f, M=M)
     end
 end

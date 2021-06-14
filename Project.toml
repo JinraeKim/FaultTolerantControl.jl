@@ -15,13 +15,13 @@ Transducers = "28d57a85-8fef-5791-bfe6-a80928e7c999"
 UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 
 [compat]
+ComponentArrays = "0.10"
+DifferentialEquations = "6.17"
 FlightSims = "0.5"
+MatrixEquations = "1"
+Reexport = "1"
 SplitApplyCombine = "1"
 Transducers = "0.4"
-DifferentialEquations = "6.17"
-Reexport = "1"
-MatrixEquations = "1"
-ComponentArrays = "0.10"
 UnPack = "1"
 julia = "1"
 

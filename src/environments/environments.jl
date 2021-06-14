@@ -1,3 +1,4 @@
+include("FDI/FDI.jl")
 include("multicopters/multicopters.jl")
 include("allocators/allocators.jl")
 include("controllers/controllers.jl")

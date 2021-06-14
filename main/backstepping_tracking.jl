@@ -8,6 +8,7 @@ using Plots
 
 function make_env()
     multicopter = IslamQuadcopterEnv()
+    Λ_func_compat = (x, p, t) -> ones(4) |> Diagonal |> Matrix  # effectiveness matrix
     @unpack m, g, B = multicopter
     allocator = PseudoInverseControlAllocator(B)
     x0_multicopter = State(multicopter)()
@@ -18,12 +19,16 @@ function make_env()
     controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=cg)
     x0_controller = State(controller)(pos0, m, g)
     x0 = ComponentArray(multicopter=x0_multicopter, controller=x0_controller)
-    multicopter, controller, allocator, x0, cg
+    multicopter, controller, allocator, x0, cg, Λ_func_compat
 end
 
 function main()
-    multicopter, controller, allocator, x0, cg = make_env()
-    prob, sol = sim(x0, Dynamics!(multicopter, controller, allocator); tf=40.0)
+    multicopter, controller, allocator, x0, cg, Λ_func_compat = make_env()
+    prob, sol = sim(
+                    x0,
+                    apply_inputs(Dynamics!(multicopter, controller, allocator); Λ=Λ_func_compat);
+                    tf=40.0,
+                   )
     t0, tf = prob.tspan
     Δt = 0.01  # data sampling period; not simulation time step
     ts = t0:Δt:tf
