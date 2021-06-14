@@ -1,6 +1,8 @@
 using FaultTolerantControl
 using LinearAlgebra
 using UnPack
+using Transducers
+using Plots
 
 
 function test_LPFFDI()
@@ -26,13 +28,22 @@ function test()
     multicopter = LeeHexacopterEnv()
     τ = 0.2
     fdi = DelayFDI(τ)
-    faults = FaultSet()
+    faults = FaultSet(LoE(5.0, 1, 0.5))
     envs = (multicopter, fdi, faults)
     x0 = State(envs...)()
     tf = 10.0
-    prob, sol = sim(x0,
-                    apply_inputs(Dynamics!(envs...);
-                                 u=zeros(6),
-                                );
-                    tf=tf)
+    prob, sol, df = sim(x0,
+                        apply_inputs(Dynamics!(envs...);
+                                     u=zeros(6),
+                                    );
+                        datum_format=DatumFormat(envs...),
+                        tstep=0.01,
+                        tf=tf)
+    ts = df.time
+    _Λs = df.Λ |> Map(diag) |> collect
+    _Λ̂s = df.Λ̂ |> Map(diag) |> collect
+    # plot
+    p = plot()
+    plot!(ts, hcat(_Λs...)')
+    plot!(ts, hcat(_Λ̂s...)')
 end

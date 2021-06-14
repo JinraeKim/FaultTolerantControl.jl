@@ -8,8 +8,8 @@ affect!(fault::AbstractActuatorFault, Λ, t) = error("Not implemented fault")
 FaultSet(args...) = AbstractFault[args...]
 
 function Affect!(faults::Vector{AbstractActuatorFault})
+    actuator_faults_groups = SplitApplyCombine.group(fault -> fault.index, faults)  # actuator_faults groups classified by fault index
     return function (Λ, t)
-        actuator_faults_groups = SplitApplyCombine.group(fault -> fault.index, faults)  # actuator_faults groups classified by fault index
         for actuator_faults_group in actuator_faults_groups
             last_actuator_fault = select_last_before_t(actuator_faults_group, t)
             affect!(last_actuator_fault, Λ, t)
@@ -25,7 +25,8 @@ function select_last_before_t(faults::Vector{T} where T <: AbstractFault, t)
     fault_times_less_than_t = faults |> Map(fault -> fault.time) |> Filter(<=(t)) |> collect
     if length(fault_times_less_than_t) == 0
         # case 1: if there is no faults occured before t
-        return (t, u) -> u
+        # return (t, u) -> u
+        return NoFault()
     else
         # case 2: if there are some faults occured before t
         fault_last_indices = findall(fault -> fault.time == maximum(fault_times_less_than_t), faults)
@@ -34,6 +35,11 @@ function select_last_before_t(faults::Vector{T} where T <: AbstractFault, t)
     end
 end
 
+
+struct NoFault <: AbstractFault
+end
+function affect!(fault::NoFault, Λ, t)
+end
 
 """
 Loss of effectiveness (LoE).
@@ -55,7 +61,7 @@ _Λ ∈ R^n: effectiveness vector
 """
 function affect!(fault::LoE, Λ, t)
     @unpack time, index, level = fault
-    _Λ = ones(size(u))
+    _Λ = ones(size(diag(Λ)))
     if t >= time
         _Λ[index] = level
     end

@@ -1,18 +1,17 @@
 function State(
         multicopter::MulticopterEnv,
         fdi::DelayFDI,
-        faults::Vector{AbstractFault}=AbstractFault[],
+        faults::Vector{AbstractFault},
     )
     return function (; args_multicopter=())
         x0_multicopter = State(multicopter)(args_multicopter...)
-        ComponentArray(multicopter=x0_multicopter)
     end
 end
 
-function Dynamics!(
+function Setup(
         multicopter::MulticopterEnv,
         fdi::DelayFDI,
-        faults::Vector{AbstractFault}=AbstractFault[],
+        faults::Vector{AbstractFault},
     )
     @unpack dim_input = multicopter
     # actuator faults
@@ -26,9 +25,34 @@ function Dynamics!(
     end
     # delayed effectiveness matrix estimation
     Λ̂_func = Estimate(fdi, Λ_func)
+    (; Λ_func=Λ_func, Λ̂_func=Λ̂_func)
+end
+
+function Dynamics!(
+        multicopter::MulticopterEnv,
+        fdi::DelayFDI,
+        faults::Vector{AbstractFault},
+    )
+    setup_data = Setup(multicopter, fdi, faults)
+    @unpack Λ_func, Λ̂_func = setup_data
     return function (dX, X, p, t; u)
         Λ = Λ_func(t)
         Λ̂ = Λ̂_func(t)
-        Dynamics!(multicopter)(dX.multicopter, X.multicopter, (), t; u=u, Λ=Λ)
+        Dynamics!(multicopter)(dX, X, (), t; u=u, Λ=Λ)
+    end
+end
+
+function DatumFormat(
+        multicopter::MulticopterEnv,
+        fdi::DelayFDI,
+        faults::Vector{AbstractFault},
+    )
+    setup_data = Setup(multicopter, fdi, faults)
+    @unpack Λ_func, Λ̂_func = setup_data
+    return function (_X, t, integrator)
+        X = copy(_X)
+        Λ = Λ_func(t)
+        Λ̂ = Λ̂_func(t)
+        (; state=X, Λ=Λ, Λ̂=Λ̂)
     end
 end
