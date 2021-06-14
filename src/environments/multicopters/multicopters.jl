@@ -6,9 +6,9 @@ M ∈ R^3: moment
 Λ: effectiveness matrix
 """
 function Dynamics!(multicopter::MulticopterEnv)
-    return function (dX, X, p, t; u, Λ::Diagonal)
+    return function (dX, X, p, t; u, Λ)
         @assert all(diag(Λ) .>= 0.0) && all(diag(Λ) .<= 1.0)
-        Λ = Matrix(Λ)  # to assign off-diagonal terms for diffeq
+        Λ = Matrix(Λ)  # to assign off-diagonal terms for diffeq (if Λ <: Diagonal)
         u_saturated = FlightSims.saturate(multicopter, u)  # for manual saturation, extend this method
         u_faulted = Λ * u_saturated
         # @show u_faulted ./ u_saturated, t  # for debugging

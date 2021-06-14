@@ -15,7 +15,7 @@ import MatrixEquations
 export AbstractFault, FaultSet
 export AbstractActuatorFault, LoE
 # FDI (fault detection and isoltion)
-export AbstractFDI, LPFFDI
+export AbstractFDI, LPFFDI, DelayFDI
 # allocator
 export PseudoInverseControlAllocator
 # controllers

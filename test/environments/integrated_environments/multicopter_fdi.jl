@@ -3,7 +3,7 @@ using LinearAlgebra
 using UnPack
 
 
-function test()
+function test_LPFFDI()
     τ = 0.1
     fdi = LPFFDI(τ)
     multicopter = LeeHexacopterEnv()
@@ -19,5 +19,20 @@ function test()
     tf = 10.0
     prob, sol = sim(x0, apply_inputs(Dynamics!(multicopter, fdi);
                                      u=zeros(dim_input), Λ=ones(dim_input) |> Diagonal,);
+                    tf=tf)
+end
+
+function test()
+    multicopter = LeeHexacopterEnv()
+    τ = 0.2
+    fdi = DelayFDI(τ)
+    faults = FaultSet()
+    envs = (multicopter, fdi, faults)
+    x0 = State(envs...)()
+    tf = 10.0
+    prob, sol = sim(x0,
+                    apply_inputs(Dynamics!(envs...);
+                                 u=zeros(6),
+                                );
                     tf=tf)
 end
