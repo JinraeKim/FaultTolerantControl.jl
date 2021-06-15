@@ -20,7 +20,7 @@ function test()
     pos_cmd_func = (t) -> [2, 1, 3]
     # pos_cmd_func = nothing
     controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=pos_cmd_func)
-    allocator = PseudoInverseControlAllocator(B)
+    allocator = PseudoInverseAllocator(B)
     env = FTC.Multicopter_DelayFDI_Faults_BacksteppingControl_PseudoInverseCA(
                                                                               multicopter_fdi_faults,
                                                                               controller,

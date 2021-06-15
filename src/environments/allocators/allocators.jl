@@ -1,2 +1,2 @@
-abstract type AbstractControlAllocator end
-include("PseudoInverseControlAllocator.jl")
+abstract type AbstractAllocator end
+include("PseudoInverseAllocator.jl")
