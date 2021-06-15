@@ -1,5 +1,5 @@
 # FaultTolerantControl
-[FaultTolerantControl.jl] is a package for fault tolerant control (FTC).
+[FaultTolerantControl.jl](https://github.com/JinraeKim/FaultTolerantControl.jl) is a package for fault tolerant control (FTC).
 ## Notes
 - This package is based on [FlightSims.jl](https://github.com/JinraeKim/FlightSims.jl),
 a general-purpose dynamical system simulator supporting nested environment design.
