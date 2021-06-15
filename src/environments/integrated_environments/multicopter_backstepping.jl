@@ -67,6 +67,7 @@ function DatumFormat(env::Multicopter_DelayFDI_Faults_BacksteppingControl_Pseudo
         xd, vd, ad, ȧd, äd = ref_model.x_0, ref_model.x_1, ref_model.x_2, ref_model.x_3, ref_model.x_4
         command_info = command(controller, allocator, p, v, R, ω, xd, vd, ad, ȧd, äd, Td, m, J, g, Λ̂)
         @unpack νd, Ṫd, u_cmd = command_info
-        (; state=x, Λ=Λ, Λ̂=Λ̂, pos=pos, u_cmd=u_cmd)
+        u = FS.saturate(multicopter, u_cmd)
+        (; state=x, Λ=Λ, Λ̂=Λ̂, pos=pos, u_cmd=u_cmd, u=u)
     end
 end
