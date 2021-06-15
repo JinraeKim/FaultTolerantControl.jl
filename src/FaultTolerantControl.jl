@@ -18,7 +18,7 @@ export AbstractActuatorFault, LoE
 # FDI (fault detection and isoltion)
 export AbstractFDI, LPFFDI, DelayFDI
 # allocator
-export PseudoInverseControlAllocator
+export PseudoInverseAllocator
 # controllers
 export BacksteppingPositionControllerEnv
 

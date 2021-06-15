@@ -14,18 +14,18 @@ function test()
                       LoE(10.0, 1, 0.2),
                       LoE(10.0, 4, 0.2),
                      )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
-    multicopter_fdi_faults = FTC.Multicopter_DelayFDI_Faults(multicopter, fdi, faults)
-    @unpack multicopter = multicopter_fdi_faults
+    plant = FTC.DelayFDI_Plant(multicopter, fdi, faults)
+    @unpack multicopter = plant
     @unpack m, B, u_max, u_min, dim_input = multicopter
     pos_cmd_func = (t) -> [2, 1, 3]
     # pos_cmd_func = nothing
     controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=pos_cmd_func)
     allocator = PseudoInverseAllocator(B)
-    env = FTC.Multicopter_DelayFDI_Faults_BacksteppingControl_PseudoInverseCA(
-                                                                              multicopter_fdi_faults,
-                                                                              controller,
-                                                                              allocator,
-                                                                             )
+    control_system = FTC.BacksteppingConrtol_PseudoInverseCA_ControlSystem(controller, allocator)
+    env = FTC.DelayFDI_Plant_BacksteppingControl_PseudoInverseCA_FeedbackSystem(
+                                                                                plant,
+                                                                                control_system,
+                                                                               )
     # sim
     tf = 40.0
     x0 = State(env)()

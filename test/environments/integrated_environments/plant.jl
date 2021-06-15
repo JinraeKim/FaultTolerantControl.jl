@@ -31,7 +31,7 @@ function test()
     fdi = DelayFDI(τ)
     index = 1
     faults = FaultSet(LoE(5.0, index, 0.5))
-    env = FTC.Multicopter_DelayFDI_Faults(multicopter, fdi, faults)
+    env = FTC.DelayFDI_Plant(multicopter, fdi, faults)
     x0 = State(env)()
     tf = 10.0
     prob, sol, df = sim(x0,

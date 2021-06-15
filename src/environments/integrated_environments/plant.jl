@@ -1,20 +1,21 @@
-abstract type Multicopter_FDI_Faults <: AbstractEnv end
+abstract type AbstractPlant <: AbstractEnv end
 
-struct Multicopter_DelayFDI_Faults <: Multicopter_FDI_Faults
+struct DelayFDI_Plant <: AbstractPlant
     multicopter::MulticopterEnv
     fdi::DelayFDI
     faults::Vector{AbstractFault}
 end
 
 
-function State(env::Multicopter_DelayFDI_Faults)
+function State(env::DelayFDI_Plant)
     @unpack multicopter, fdi, faults = env
     return function (; args_multicopter=())
-        x0_multicopter = State(multicopter)(args_multicopter...)
+        x_multicopter = State(multicopter)(args_multicopter...)
+        ComponentArray(multicopter=x_multicopter)
     end
 end
 
-function EffectivenessMatrixFunction(env::Multicopter_DelayFDI_Faults)
+function EffectivenessMatrixFunction(env::DelayFDI_Plant)
     @unpack multicopter, fdi, faults = env
     @unpack dim_input = multicopter
     # actuator faults
@@ -31,18 +32,18 @@ function EffectivenessMatrixFunction(env::Multicopter_DelayFDI_Faults)
     (; Λ_func=Λ_func, Λ̂_func=Λ̂_func)
 end
 
-function Dynamics!(env::Multicopter_DelayFDI_Faults)
+function Dynamics!(env::DelayFDI_Plant)
     @unpack multicopter, fdi, faults = env
     effectiveness_matrix_functions = EffectivenessMatrixFunction(env)
     @unpack Λ_func, Λ̂_func = effectiveness_matrix_functions
     return function (dX, X, p, t; u)
         Λ = Λ_func(t)
         Λ̂ = Λ̂_func(t)
-        Dynamics!(multicopter)(dX, X, (), t; u=u, Λ=Λ)
+        Dynamics!(multicopter)(dX.multicopter, X.multicopter, (), t; u=u, Λ=Λ)
     end
 end
 
-function DatumFormat(env::Multicopter_DelayFDI_Faults)
+function DatumFormat(env::DelayFDI_Plant)
     @unpack multicopter, fdi, faults = env
     effectiveness_matrix_functions = EffectivenessMatrixFunction(env)
     @unpack Λ_func, Λ̂_func = effectiveness_matrix_functions
