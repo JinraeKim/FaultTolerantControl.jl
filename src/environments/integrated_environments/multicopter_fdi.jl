@@ -14,7 +14,7 @@ function State(env::Multicopter_DelayFDI_Faults)
     end
 end
 
-function Setup(env::Multicopter_DelayFDI_Faults)
+function EffectivenessMatrixFunction(env::Multicopter_DelayFDI_Faults)
     @unpack multicopter, fdi, faults = env
     @unpack dim_input = multicopter
     # actuator faults
@@ -33,8 +33,8 @@ end
 
 function Dynamics!(env::Multicopter_DelayFDI_Faults)
     @unpack multicopter, fdi, faults = env
-    setup_data = Setup(env)
-    @unpack Λ_func, Λ̂_func = setup_data
+    effectiveness_matrix_functions = EffectivenessMatrixFunction(env)
+    @unpack Λ_func, Λ̂_func = effectiveness_matrix_functions
     return function (dX, X, p, t; u)
         Λ = Λ_func(t)
         Λ̂ = Λ̂_func(t)
@@ -44,8 +44,8 @@ end
 
 function DatumFormat(env::Multicopter_DelayFDI_Faults)
     @unpack multicopter, fdi, faults = env
-    setup_data = Setup(env)
-    @unpack Λ_func, Λ̂_func = setup_data
+    effectiveness_matrix_functions = EffectivenessMatrixFunction(env)
+    @unpack Λ_func, Λ̂_func = effectiveness_matrix_functions
     return function (_X, t, integrator)
         X = copy(_X)
         Λ = Λ_func(t)

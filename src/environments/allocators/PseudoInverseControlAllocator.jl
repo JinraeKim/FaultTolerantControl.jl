@@ -2,10 +2,10 @@
 Moore-Penrose inverse control allocator.
 """
 struct PseudoInverseControlAllocator <: AbstractControlAllocator
-    B_inv
+    B_pinv
     function PseudoInverseControlAllocator(B)
-        B_inv = pinv(B)
-        new(B_inv)
+        B_pinv = pinv(B)
+        new(B_pinv)
     end
 end
 
@@ -15,4 +15,6 @@ end
 # Notes
 ν = B*u where u: control input
 """
-(allocator::PseudoInverseControlAllocator)(ν) = allocator.B_inv * ν
+function (allocator::PseudoInverseControlAllocator)(ν, Λ=Diagonal(ones(size(ν))))
+    (pinv(Λ) * allocator.B_pinv) * ν  # pinv(B*Λ) = pinv(Λ) * pinv(B)
+end
