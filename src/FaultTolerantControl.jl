@@ -4,6 +4,7 @@ module FaultTolerantControl
 # ERROR: Define the structure of state for your environment
 using Reexport
 @reexport using FlightSims
+const FS = FlightSims
 import FlightSims: State, Params, Dynamics!, Dynamics, DatumFormat, Process  # `import` will help you to automatically extend the imported methods
 using DifferentialEquations
 using LinearAlgebra
@@ -17,7 +18,7 @@ export AbstractActuatorFault, LoE
 # FDI (fault detection and isoltion)
 export AbstractFDI, LPFFDI, DelayFDI
 # allocator
-export PseudoInverseControlAllocator
+export PseudoInverseAllocator
 # controllers
 export BacksteppingPositionControllerEnv
 
