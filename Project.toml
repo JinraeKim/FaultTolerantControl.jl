@@ -17,7 +17,7 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 [compat]
 ComponentArrays = "0.10"
 DifferentialEquations = "6.17"
-FlightSims = "0.5"
+FlightSims = "0.7"
 MatrixEquations = "1"
 Reexport = "1"
 SplitApplyCombine = "1"

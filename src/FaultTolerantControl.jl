@@ -5,7 +5,7 @@ module FaultTolerantControl
 using Reexport
 @reexport using FlightSims
 const FS = FlightSims
-import FlightSims: State, Params, Dynamics!, Dynamics, DatumFormat, Process  # `import` will help you to automatically extend the imported methods
+import FlightSims: State, Params, Dynamics!, Dynamics  # `import` will help you to automatically extend the imported methods
 using DifferentialEquations
 using LinearAlgebra
 using Transducers, UnPack, ComponentArrays
