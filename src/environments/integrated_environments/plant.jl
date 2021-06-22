@@ -36,21 +36,9 @@ function Dynamics!(env::DelayFDI_Plant)
     @unpack multicopter, fdi, faults = env
     effectiveness_matrix_functions = EffectivenessMatrixFunction(env)
     @unpack Λ_func, Λ̂_func = effectiveness_matrix_functions
-    return function (dX, X, p, t; u)
+    @Loggable function dynamics!(dX, X, p, t; u)
         Λ = Λ_func(t)
-        Λ̂ = Λ̂_func(t)
-        Dynamics!(multicopter)(dX.multicopter, X.multicopter, (), t; u=u, Λ=Λ)
-    end
-end
-
-function DatumFormat(env::DelayFDI_Plant)
-    @unpack multicopter, fdi, faults = env
-    effectiveness_matrix_functions = EffectivenessMatrixFunction(env)
-    @unpack Λ_func, Λ̂_func = effectiveness_matrix_functions
-    return function (_X, t, integrator)
-        X = copy(_X)
-        Λ = Λ_func(t)
-        Λ̂ = Λ̂_func(t)
-        (; state=X, Λ=Λ, Λ̂=Λ̂)
+        @nested_log :FDI Λ̂ = Λ̂_func(t)
+        @nested_log Dynamics!(multicopter)(dX.multicopter, X.multicopter, (), t; u=u, Λ=Λ)
     end
 end

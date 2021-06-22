@@ -1,6 +1,4 @@
 using FaultTolerantControl
-using FlightSims
-const FS = FlightSims
 using UnPack, ComponentArrays
 using Transducers
 using Plots
@@ -10,11 +8,11 @@ function make_env()
     multicopter = IslamQuadcopterEnv()
     Λ_func_compat = (x, p, t) -> ones(4) |> Diagonal |> Matrix  # effectiveness matrix
     @unpack m, g, B = multicopter
-    allocator = PseudoInverseControlAllocator(B)
+    allocator = PseudoInverseAllocator(B)
     x0_multicopter = State(multicopter)()
     pos0 = copy(x0_multicopter.p)
     vel0 = copy(x0_multicopter.v)
-    helixCG = FS.HelixCommandGenerator(pos0)
+    helixCG = HelixCommandGenerator(pos0)
     cg = Command(helixCG)
     controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=cg)
     x0_controller = State(controller)(pos0, m, g)
@@ -24,7 +22,7 @@ end
 
 function main()
     multicopter, controller, allocator, x0, cg, Λ_func_compat = make_env()
-    prob, sol = sim(
+    prob, df = sim(
                     x0,
                     apply_inputs(Dynamics!(multicopter, controller, allocator); Λ=Λ_func_compat);
                     tf=40.0,
