@@ -8,8 +8,8 @@ M ∈ R^3: moment
 function Dynamics!(multicopter::MulticopterEnv)
     @Loggable function dynamics!(dX, X, p, t; u, Λ)
         @assert all(diag(Λ) .>= 0.0) && all(diag(Λ) .<= 1.0)
-        @nested_log :input u_cmd = u
         @nested_log :FDI Λ = Matrix(Λ)  # to assign off-diagonal terms for diffeq (if Λ <: Diagonal)
+        @nested_log :input u_cmd = u
         @nested_log :input u_saturated = FlightSims.saturate(multicopter, u)  # for manual saturation, extend this method
         @nested_log :input u_faulted = Λ * u_saturated
         # @show u_faulted ./ u_saturated, t  # for debugging

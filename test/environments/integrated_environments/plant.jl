@@ -1,7 +1,6 @@
 using FaultTolerantControl
 const FTC = FaultTolerantControl
 using LinearAlgebra
-using UnPack
 using Transducers
 using Plots
 

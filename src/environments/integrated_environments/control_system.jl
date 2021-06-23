@@ -24,7 +24,7 @@ end
 
 function Dynamics!(cs::BacksteppingConrtol_PseudoInverseCA_ControlSystem)
     @unpack controller = cs
-    return function (dx, x, p, t; pos_cmd=nothing, Ṫd)
-        Dynamics!(controller)(dx.controller, x.controller, p, t; pos_cmd=pos_cmd, Ṫd=Ṫd)
+    @Loggable function dynamics!(dx, x, p, t; pos_cmd=nothing, Ṫd)
+        @nested_log :controller Dynamics!(controller)(dx.controller, x.controller, p, t; pos_cmd=pos_cmd, Ṫd=Ṫd)
     end
 end
