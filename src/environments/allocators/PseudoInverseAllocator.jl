@@ -1,7 +1,7 @@
 """
 Moore-Penrose inverse control allocator.
 """
-struct PseudoInverseAllocator <: AbstractAllocator
+struct PseudoInverseAllocator <: StaticAllocator
     B_pinv
     function PseudoInverseAllocator(B)
         B_pinv = pinv(B)

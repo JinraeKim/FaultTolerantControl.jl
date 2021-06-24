@@ -2,7 +2,7 @@ abstract type AbstractFeedbackSystem <: AbstractEnv end
 
 struct DelayFDI_Plant_BacksteppingControl_PseudoInverseCA_FeedbackSystem <: AbstractFeedbackSystem
     plant::DelayFDI_Plant
-    control_system::BacksteppingConrtol_PseudoInverseCA_ControlSystem
+    control_system::BacksteppingControl_StaticAllocator_ControlSystem
 end
 
 """

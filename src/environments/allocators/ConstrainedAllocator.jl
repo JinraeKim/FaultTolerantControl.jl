@@ -1,7 +1,7 @@
 """
 Constrained-optimisation-based control allocator.
 """
-struct ConstrainedAllocator <: AbstractAllocator
+struct ConstrainedAllocator <: StaticAllocator
     B
     u_min
     u_max

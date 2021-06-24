@@ -19,17 +19,17 @@ function test()
     @unpack m, B, u_max, u_min, dim_input = multicopter
     pos_cmd_func = (t) -> [2, 1, 3]
     controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=pos_cmd_func)
-    # allocator = PseudoInverseAllocator(B)
-    allocator = ConstrainedAllocator(B, u_min, u_max)
-    control_system = FTC.BacksteppingConrtol_PseudoInverseCA_ControlSystem(controller, allocator)
+    allocator = PseudoInverseAllocator(B)
+    # allocator = ConstrainedAllocator(B, u_min, u_max)
+    control_system = FTC.BacksteppingControl_StaticAllocator_ControlSystem(controller, allocator)
     env = FTC.DelayFDI_Plant_BacksteppingControl_PseudoInverseCA_FeedbackSystem(
                                                                                 plant,
                                                                                 control_system,
                                                                                )
     # sim
-    tf = 15.0
+    tf = 20.0
     x0 = State(env)()
-    prob, df = sim(
+    @time prob, df = sim(
                    x0,
                    Dynamics!(env);
                    tf=tf,
