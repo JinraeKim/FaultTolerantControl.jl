@@ -25,11 +25,12 @@ function (allocator::ConstrainedAllocator)(ν, Λ=Diagonal(ones(size(ν)));
     @unpack u_min, u_max, u, B = allocator
     prob = minimize(
                     norm(u, p)
-                    + 1e5*norm(ν - B*Λ*u, 1)
+                    + 1e5*norm(ν - B*Λ*u, 1)  # exact penalty method
                    )
     prob.constraints += [
                          u .>= u_min;  # min
                          u .<= u_max;  # max
+                         # ν == B*Λ*u  # equality; replaced by exact penalty method
                         ]
     Convex.solve!(prob,
                   Mosek.Optimizer();
