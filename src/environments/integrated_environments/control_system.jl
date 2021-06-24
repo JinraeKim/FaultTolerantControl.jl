@@ -2,7 +2,7 @@ abstract type AbstractControlSystem <: AbstractEnv end
 
 struct BacksteppingConrtol_PseudoInverseCA_ControlSystem <: AbstractControlSystem
     controller::BacksteppingPositionControllerEnv
-    allocator::PseudoInverseAllocator
+    allocator::AbstractAllocator
 end
 
 function State(cs::BacksteppingConrtol_PseudoInverseCA_ControlSystem)

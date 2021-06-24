@@ -2,7 +2,7 @@ module FaultTolerantControl
 
 # if you don't reexport `FlightSims`, many APIs, e.g., `State` would report an issue like:
 # ERROR: Define the structure of state for your environment
-using Debugger  # tmp
+# using Debugger  # tmp
 using Reexport
 @reexport using FlightSims
 const FS = FlightSims
@@ -11,6 +11,7 @@ import FlightSims: State, Params, Dynamics!, Dynamics
 import FlightSims: Command
 using DifferentialEquations
 using LinearAlgebra
+using Convex, Mosek, MosekTools
 using Transducers, UnPack, ComponentArrays
 import SplitApplyCombine
 import MatrixEquations
@@ -21,7 +22,7 @@ export AbstractActuatorFault, LoE
 # FDI (fault detection and isoltion)
 export AbstractFDI, LPFFDI, DelayFDI
 # allocator
-export PseudoInverseAllocator
+export PseudoInverseAllocator, ConstrainedAllocator
 # controllers
 export BacksteppingPositionControllerEnv
 
