@@ -39,6 +39,9 @@ function Dynamics!(env::DelayFDI_Plant)
     @Loggable function dynamics!(dX, X, p, t; u)
         Λ = Λ_func(t)
         @nested_log :FDI Λ̂ = Λ̂_func(t)
+        # @nested_log :input u_saturated = pinv(Λ̂) * FlightSims.saturate(multicopter, Λ̂*u)  # saturation considering fault
+        # @nested_log :input u_saturated = u  # saturation considering fault
+        # @nested_log Dynamics!(multicopter)(dX.multicopter, X.multicopter, (), t; u=u_saturated, Λ=Λ)
         @nested_log Dynamics!(multicopter)(dX.multicopter, X.multicopter, (), t; u=u, Λ=Λ)
     end
 end
