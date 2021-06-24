@@ -8,11 +8,12 @@ Proc. Am. Control Conf., vol. 2016-July, pp. 6760–6766, 2016.
 [2] S. J. Su, Y. Y. Zhu, H. R. Wang, and C. Yun, “A Method to Construct a Reference Model for Model Reference Adaptive Control,” Adv. Mech. Eng., vol. 11, no. 11, pp. 1–9, 2019.
 """
 struct AdaptiveAllocator <: AbstractEnv
+    B
     B_pinv
     γ
     function AdaptiveAllocator(B, γ=1e-1)
         B_pinv = pinv(B)
-        new(B_pinv, γ)
+        new(B, B_pinv, γ)
     end
 end
 
@@ -33,9 +34,8 @@ end
 Several functions are exported from `utils.jl`, e.g., T_u_inv(T).
 """
 function Command(allocator::AdaptiveAllocator)
-    error("TODO")
     @unpack B, γ = allocator
-    return function (νd, e, zB, R, J,
+    return function (νd, e, zB, T, Θ̂, R, J,
                      Ap, Bp, P, Kp, Kt, Kω)
         P̄ = [          P         zeros(6, 6);
              zeros(6, 6) 0.5*Matrix(I, 6, 6)]
@@ -52,7 +52,7 @@ function Command(allocator::AdaptiveAllocator)
         B̄ = [-(θ_ėp*zB) zeros(6, 3);
              -(θ_u̇1*zB) zeros(3, 3);
              -(θ_ω̇d*zB) inv(J)]
-        Θ̂̇ = γ * proj_R(
+        Θ̂̇ = γ * Proj_R(
                        Θ̂,
                        (νd * e' * P̄ * B̄ * B)'
                       )

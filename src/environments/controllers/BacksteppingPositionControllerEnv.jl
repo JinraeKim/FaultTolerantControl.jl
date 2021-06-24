@@ -108,6 +108,6 @@ function Command(controller::BacksteppingPositionControllerEnv)
         e = [ep;
              et;
              eω]
-        νd, Ṫd, e, zB
+        νd, Ṫd, e, zB, T
     end
 end

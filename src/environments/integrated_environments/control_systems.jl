@@ -50,10 +50,9 @@ end
 function Command(cs::BacksteppingControl_AdaptiveAllocator_ControlSystem)
     @unpack controller, allocator = cs
     @unpack Ap, Bp, P, Kp, Kt, Kω = controller
-    error("TODO; check the below")
     return function (p, v, R, ω, xd, vd, ad, ȧd, äd, Td, m, J, g, Λ̂, Θ̂)
-        νd, Ṫd, e, zB = Command(controller)(p, v, R, ω, xd, vd, ad, ȧd, äd, Td, m, J, g)
-        Θ̂̇ = Command(allocator)(νd, e, zB, R, J,
+        νd, Ṫd, e, zB, T = Command(controller)(p, v, R, ω, xd, vd, ad, ȧd, äd, Td, m, J, g)
+        Θ̂̇ = Command(allocator)(νd, e, zB, T, Θ̂, R, J,
                                Ap, Bp, P, Kp, Kt, Kω)
         u_cmd = allocator(νd, Θ̂)
         ComponentArray(νd=νd, Ṫd=Ṫd, u_cmd=u_cmd, Θ̂̇=Θ̂̇)
