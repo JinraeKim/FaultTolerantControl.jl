@@ -1,7 +1,7 @@
 using Test
 
 
-@testset "integrated_environments" begin
+@testset "controllers" begin
     for f in readdir(@__DIR__)
         if f != splitdir(@__FILE__)[2]
             include(f)

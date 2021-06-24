@@ -57,7 +57,8 @@ end
 
 function Dynamics!(controller::BacksteppingPositionControllerEnv)
     @unpack Ref_model = controller
-    return function (dX, X, p, t; pos_cmd=nothing, Ṫd)
+    @Loggable function dynamics!(dX, X, p, t; pos_cmd=nothing, Ṫd)
+        @log state = X
         Dynamics!(Ref_model)(dX.ref_model, X.ref_model, (), t; x_cmd=pos_cmd)  # be careful; parameter = ()
         dX.Td = Ṫd
         nothing
@@ -112,8 +113,7 @@ function command(controller::BacksteppingPositionControllerEnv)
         ωd = [u2[1:2]..., 0]
         eω = ωd - ω
         Md = cross(ω, J*ω) + J*(T_ω(T)'*R*et + ω̇d + Kω*eω)
-        # νd = vcat(Td, Md)
-        νd = ComponentArray(f=Td, M=Md)
+        νd = vcat(Td, Md)
         νd, Ṫd
     end
 end

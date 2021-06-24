@@ -6,14 +6,19 @@ M ∈ R^3: moment
 Λ: effectiveness matrix
 """
 function Dynamics!(multicopter::MulticopterEnv)
-    return function (dX, X, p, t; u, Λ)
+    @Loggable function dynamics!(dX, X, p, t; u, Λ)
         @assert all(diag(Λ) .>= 0.0) && all(diag(Λ) .<= 1.0)
-        Λ = Matrix(Λ)  # to assign off-diagonal terms for diffeq (if Λ <: Diagonal)
-        u_saturated = FlightSims.saturate(multicopter, u)  # for manual saturation, extend this method
-        u_faulted = Λ * u_saturated
+        @nested_log :FDI Λ = Matrix(Λ)  # to assign off-diagonal terms for diffeq (if Λ <: Diagonal)
+        if t > 10
+            @bp
+        end
+        @nested_onlylog :input u_cmd = u
+        @nested_log :input u_saturated = FlightSims.saturate(multicopter, u)
+        @nested_log :input u_faulted = Λ * u_saturated
+        @nested_onlylog :input u_actual = u_faulted
         # @show u_faulted ./ u_saturated, t  # for debugging
-        ν = FlightSims.input_to_force_moment(multicopter, u_faulted)  # for manual input_to_force_moment transformation, extend this method
+        @nested_log :input ν = FlightSims.input_to_force_moment(multicopter, u_faulted)  # for manual input_to_force_moment transformation, extend this method
         f, M = ν[1], ν[2:4]
-        FlightSims.__Dynamics!(multicopter)(dX, X, p, t; f=f, M=M)
+        @nested_log FlightSims.__Dynamics!(multicopter)(dX, X, p, t; f=f, M=M)  # :state, :input
     end
 end
