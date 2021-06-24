@@ -11,15 +11,16 @@ function test()
     τ = 0.2
     fdi = DelayFDI(τ)
     faults = FaultSet(
-                      LoE(10.0, 1, 0.0),
-                      # LoE(10.0, 1, 0.1),
+                      LoE(5.0, 1, 0.0),
+                      LoE(5.0, 2, 0.0),
                      )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
     plant = FTC.DelayFDI_Plant(multicopter, fdi, faults)
     @unpack multicopter = plant
     @unpack m, B, u_max, u_min, dim_input = multicopter
     pos_cmd_func = (t) -> [2, 1, 3]
     controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=pos_cmd_func)
-    allocator = PseudoInverseAllocator(B)
+    # allocator = PseudoInverseAllocator(B)
+    allocator = ConstrainedAllocator(B, u_min, u_max)
     control_system = FTC.BacksteppingConrtol_PseudoInverseCA_ControlSystem(controller, allocator)
     env = FTC.DelayFDI_Plant_BacksteppingControl_PseudoInverseCA_FeedbackSystem(
                                                                                 plant,
@@ -50,20 +51,20 @@ function test()
     p_pos = plot(ts, hcat(poss...)';
                  title="position",
                  label=["x" "y" "z"],
-                 legend=:outertopright,
+                 legend=:topright,
                 )
     p__Λ = plot(ts, hcat(_Λs...)'; title="effectiveness matrix",
                 label=["true" fill(nothing, dim_input-1)...],
                 color="black",
                 ls=:dash,
-                legend=:outertopright,
+                legend=:topright,
                )
     plot!(p__Λ, ts, hcat(_Λ̂s...)';
           label=["estimated" fill(nothing, dim_input-1)...],
           color="red")
     p_u = plot(;
                title="rotor input",
-               legend=:outertopright,
+               legend=:topright,
               )
     plot!(p_u, ts, maximum(u_max)*ones(size(ts));
           label="input min/max",
@@ -97,7 +98,7 @@ function test()
          )
     p_ν = plot(;
                title="virtual input",
-               legend=:outertopright,
+               legend=:topright,
               )
     plot!(p_ν, ts, hcat(νs...)';
           label=["actual input" fill(nothing, 4-1)...],
@@ -106,6 +107,7 @@ function test()
     plot!(p_ν, ts, hcat(νds...)';
           label=["desired input" fill(nothing, 4-1)...],
           color=:black,
+          ls=:dash,
          )
     plot(p_pos, p__Λ, p_u, p_ν; layout=(4, 1), size=(600, 600))
 end
