@@ -1,3 +1,3 @@
-include("plant.jl")
-include("control_system.jl")
-include("feedback_system.jl")
+include("plants.jl")
+include("control_systems.jl")
+include("feedback_systems.jl")
