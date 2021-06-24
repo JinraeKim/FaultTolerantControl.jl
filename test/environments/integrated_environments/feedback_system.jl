@@ -26,61 +26,59 @@ function test()
                                                                                 control_system,
                                                                                )
     # sim
-    tf = 1.0
+    tf = 40.0
     x0 = State(env)()
     prob, df = sim(
                    x0,
                    Dynamics!(env);
                    tf=tf,
                   )
-    df
     ts = df.time
-    poss = df.plant |> Map(datum -> datum.multicopter.state.p) |> collect
-    us_cmd = df.plant |> Map(datum -> datum.multicopter.input.u_cmd) |> collect
-    # us = df.u
-    # us_cmd = df.u_cmd
-    # Λs = df.Λ
-    # Λ̂s = df.Λ̂
-    # _Λs = Λs |> Map(diag) |> collect
-    # _Λ̂s = Λ̂s |> Map(diag) |> collect
-    # # plots
-    # p_pos = plot(ts, hcat(poss...)';
-    #              title="position",
-    #              label=["x" "y" "z"],
-    #              legend=:outertopright,
-    #             )
-    # p__Λ = plot(ts, hcat(_Λs...)'; title="effectiveness matrix",
-    #             label=["true" fill(nothing, dim_input-1)...],
-    #             color="black",
-    #             ls=:dash,
-    #             legend=:outertopright,
-    #            )
-    # plot!(p__Λ, ts, hcat(_Λ̂s...)';
-    #       label=["estimated" fill(nothing, dim_input-1)...],
-    #       color="red")
-    # p_u = plot(;
-    #            title="rotor input",
-    #            legend=:outertopright,
-    #           )
-    # plot!(p_u, ts, maximum(u_max)*ones(size(ts));
-    #       label="input maximum",
-    #       ls=:dash,
-    #       color=:blue,
-    #      )
-    # plot!(p_u, ts, minimum(u_min)*ones(size(ts));
-    #       label="input minimum",
-    #       ls=:dash,
-    #       color=:blue,
-    #      )
-    # plot!(p_u, ts, hcat(us...)';
-    #       # ylim=(-0.1*maximum(u_max), 1.1*maximum(u_max)),
-    #       label=["input" fill(nothing, dim_input-1)...],
-    #       color="red",
-    #      )
-    # plot!(p_u, ts, hcat(us_cmd...)';
-    #       label=["command" fill(nothing, dim_input-1)...],
-    #       color="black",
-    #       ls=:dash,
-    #      )
-    # plot(p_pos, p__Λ, p_u; layout=(3, 1), size=(600, 600))
+    poss = df.plant |> Map(datum -> datum.state.p) |> collect
+    us_cmd = df.plant |> Map(datum -> datum.input.u_cmd) |> collect
+    us_actual = df.plant |> Map(datum -> datum.input.u_actual) |> collect
+    Λs = df.plant |> Map(datum -> datum.FDI.Λ) |> collect
+    Λ̂s = df.plant |> Map(datum -> datum.FDI.Λ̂) |> collect
+    _Λs = Λs |> Map(diag) |> collect
+    _Λ̂s = Λ̂s |> Map(diag) |> collect
+    # plots
+    p_pos = plot(ts, hcat(poss...)';
+                 title="position",
+                 label=["x" "y" "z"],
+                 legend=:outertopright,
+                )
+    p__Λ = plot(ts, hcat(_Λs...)'; title="effectiveness matrix",
+                label=["true" fill(nothing, dim_input-1)...],
+                color="black",
+                ls=:dash,
+                legend=:outertopright,
+               )
+    plot!(p__Λ, ts, hcat(_Λ̂s...)';
+          label=["estimated" fill(nothing, dim_input-1)...],
+          color="red")
+    p_u = plot(;
+               title="rotor input",
+               legend=:outertopright,
+              )
+    plot!(p_u, ts, maximum(u_max)*ones(size(ts));
+          label="input maximum",
+          ls=:dash,
+          color=:blue,
+         )
+    plot!(p_u, ts, minimum(u_min)*ones(size(ts));
+          label="input minimum",
+          ls=:dash,
+          color=:blue,
+         )
+    plot!(p_u, ts, hcat(us_actual...)';
+          # ylim=(-0.1*maximum(u_max), 1.1*maximum(u_max)),
+          label=["input" fill(nothing, dim_input-1)...],
+          color="red",
+         )
+    plot!(p_u, ts, hcat(us_cmd...)';
+          label=["command" fill(nothing, dim_input-1)...],
+          color="black",
+          ls=:dash,
+         )
+    plot(p_pos, p__Λ, p_u; layout=(3, 1), size=(600, 600))
 end

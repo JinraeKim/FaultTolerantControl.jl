@@ -12,8 +12,9 @@ function Dynamics!(multicopter::MulticopterEnv)
         @nested_log :input u_cmd = u
         @nested_log :input u_saturated = FlightSims.saturate(multicopter, u)  # for manual saturation, extend this method
         @nested_log :input u_faulted = Λ * u_saturated
+        @nested_onlylog :input u_actual = u_faulted  # TODO: bug should be fixed
         # @show u_faulted ./ u_saturated, t  # for debugging
-        ν = FlightSims.input_to_force_moment(multicopter, u_faulted)  # for manual input_to_force_moment transformation, extend this method
+        @nested_log :input ν = FlightSims.input_to_force_moment(multicopter, u_faulted)  # for manual input_to_force_moment transformation, extend this method
         f, M = ν[1], ν[2:4]
         @nested_log FlightSims.__Dynamics!(multicopter)(dX, X, p, t; f=f, M=M)  # :state, :input
     end
