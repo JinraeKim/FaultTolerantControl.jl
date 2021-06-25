@@ -16,17 +16,17 @@ function run_sim(method, dir_log, file_name="switching.jld2")
     data_exists = isfile(file_path)
     if !data_exists
         _multicopter = LeeHexacopterEnv()
-        u_max = _multicopter.u_max ./ 3
+        u_max = (1/3) * _multicopter.m * _multicopter.g * ones(_multicopter.dim_input)
         multicopter = LeeHexacopterEnv(u_max=u_max)
+        @unpack m, B, u_min, dim_input = multicopter
         τ = 0.2
         fdi = DelayFDI(τ)
         faults = FaultSet(
-                          LoE(3.0, 1, 0.1),  # t, index, level
-                          LoE(5.0, 3, 0.3),
+                          LoE(3.0, 1, 0.3),  # t, index, level
+                          LoE(5.0, 3, 0.1),
                          )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
         plant = FTC.DelayFDI_Plant(multicopter, fdi, faults)
         @unpack multicopter = plant
-        @unpack m, B, u_min, dim_input = multicopter
         pos_cmd_func = (t) -> [2, 1, 3]
         controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=pos_cmd_func)
         # static allocators
