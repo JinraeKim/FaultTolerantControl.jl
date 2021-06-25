@@ -11,7 +11,7 @@ struct AdaptiveAllocator <: AbstractEnv
     B
     B_pinv
     γ
-    function AdaptiveAllocator(B, γ=1e-1)
+    function AdaptiveAllocator(B, γ=1e-2)
         B_pinv = pinv(B)
         new(B, B_pinv, γ)
     end
