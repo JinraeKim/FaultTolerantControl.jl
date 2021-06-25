@@ -36,5 +36,5 @@ function (allocator::ConstrainedAllocator)(ν, Λ=Diagonal(ones(size(ν)));
     Convex.solve!(prob,
                   Mosek.Optimizer();
                   silent_solver=silent_solver, warmstart=true)
-    u.value
+    u.value[:]  # dim: n×1 -> n
 end

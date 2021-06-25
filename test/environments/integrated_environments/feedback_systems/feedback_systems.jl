@@ -7,6 +7,7 @@ using LinearAlgebra
 using DifferentialEquations
 using JLD2, FileIO
 using Printf
+using NumericalIntegration
 
 
 function run_sim(method, dir_log, file_name="switching.jld2")
@@ -27,7 +28,7 @@ function run_sim(method, dir_log, file_name="switching.jld2")
                          )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
         plant = FTC.DelayFDI_Plant(multicopter, fdi, faults)
         @unpack multicopter = plant
-        pos_cmd_func = (t) -> [2, 1, 3]
+        pos_cmd_func = (t) -> [2, 1, -3]
         controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=pos_cmd_func)
         # static allocators
         # allocator = PseudoInverseAllocator(B)  # deprecated; it does not work when failures occur. I guess it's due to Moore-Penrose pseudo inverse.
@@ -104,7 +105,7 @@ end
 
 function plot_figures(dir_log, saved_data)
     @unpack df, dim_input, u_max, u_min, pos_cmd_func = saved_data
-    # plots
+    # data
     ts = df.time
     poss = df.sol |> Map(datum -> datum.plant.state.p) |> collect
     xs = poss |> Map(pos -> pos[1]) |> collect
@@ -126,6 +127,13 @@ function plot_figures(dir_log, saved_data)
     _Λ̂s = Λ̂s |> Map(diag) |> collect
     _method_dict = Dict(:adaptive => 0, :static => 1)
     _methods = df.sol |> Map(datum -> _method = datum.method == :adaptive ? _method_dict[:adaptive] : _method_dict[:static]) |> collect
+    control_squares = us_actual |> Map(u -> u'*u) |> collect
+    control_inf_norms = us_actual |> Map(u -> norm(u, Inf)) |> collect
+    ∫control_square = integrate(ts, control_squares)  # ∫ u' * u
+    ∫control_inf_norm = integrate(ts, control_inf_norms)  # ∫ u' * u
+    @show us_actual[1]
+    @show ∫control_square
+    @show ∫control_inf_norm
     # plots
     ts_tick = ts[1:100:end]
     tstr = ts_tick |> Map(t -> @sprintf("%0.2f", t)) |> collect
@@ -252,6 +260,7 @@ end
 
 function test()
     dir_log = "data"
+    mkpath(dir_log)
     methods = [:adaptive, :static, :adaptive2static]
     @show methods
     for method in methods
