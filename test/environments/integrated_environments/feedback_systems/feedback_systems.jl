@@ -129,11 +129,12 @@ function plot_figures(dir_log, saved_data)
     _methods = df.sol |> Map(datum -> _method = datum.method == :adaptive ? _method_dict[:adaptive] : _method_dict[:static]) |> collect
     control_squares = us_actual |> Map(u -> u'*u) |> collect
     control_inf_norms = us_actual |> Map(u -> norm(u, Inf)) |> collect
-    ∫control_square = integrate(ts, control_squares)  # ∫ u' * u
-    ∫control_inf_norm = integrate(ts, control_inf_norms)  # ∫ u' * u
-    @show us_actual[1]
-    @show ∫control_square
-    @show ∫control_inf_norm
+    _∫control_squares = cumul_integrate(ts, control_squares)  # ∫ u' * u
+    ∫control_squares = _∫control_squares .- _∫control_squares[1]  # to make the first element 0
+    _∫control_inf_norms = cumul_integrate(ts, control_inf_norms)  # ∫ u' * u
+    ∫control_inf_norms = _∫control_inf_norms .- _∫control_inf_norms[1]
+    @show ∫control_squares[end]
+    @show ∫control_inf_norms[end]
     # plots
     ts_tick = ts[1:100:end]
     tstr = ts_tick |> Map(t -> @sprintf("%0.2f", t)) |> collect
