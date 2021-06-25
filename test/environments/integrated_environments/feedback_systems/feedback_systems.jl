@@ -103,7 +103,7 @@ function run_sim(method, dir_log, file_name="switching.jld2")
     saved_data = JLD2.load(file_path)
 end
 
-function plot_figures(dir_log, saved_data)
+function plot_figures(method, dir_log, saved_data)
     @unpack df, dim_input, u_max, u_min, pos_cmd_func = saved_data
     # data
     ts = df.time
@@ -142,7 +142,8 @@ function plot_figures(dir_log, saved_data)
     ## pos
     p_pos = plot(;
                  title="position",
-                 legend=:topleft,
+                 legend=:bottomright,
+                 ylabel="position (m)"
                 )
     xticks!(ts_tick, tstr_empty)
     plot!(p_pos, ts, xs;
@@ -158,21 +159,22 @@ function plot_figures(dir_log, saved_data)
           color=3,  # i'th default color
          )
     plot!(p_pos, ts, xs_des;
-          label="x_des", ls=:dash,
+          label=nothing, ls=:dash,
           color=1,  # i'th default color
          )
     plot!(p_pos, ts, ys_des;
-          label="y_des", ls=:dash,
+          label=nothing, ls=:dash,
           color=2,  # i'th default color
          )
     plot!(p_pos, ts, zs_des;
-          label="z_des", ls=:dash,
+          label=nothing, ls=:dash,
           color=3,  # i'th default color
          )
     ## Λ
     p__Λ = plot(ts, hcat(_Λ̂s...)'; title="effectiveness vector",
                 ylim=(-0.1, 1.1),
                 label=["estimated" fill(nothing, dim_input-1)...],
+                ylabel="diag(Λ)",
                 color=:black,
          )
     xticks!(ts_tick, tstr_empty)
@@ -180,7 +182,7 @@ function plot_figures(dir_log, saved_data)
                 label=["true" fill(nothing, dim_input-1)...],
                 color=:red,
                 ls=:dash,
-                legend=:bottomleft,
+                legend=:right,
                )
     ## method
     p_method = plot(;
@@ -190,6 +192,8 @@ function plot_figures(dir_log, saved_data)
     plot!(p_method, ts, hcat(_methods...)';
           label="",
           color=:black,
+          ylabel="method",
+          xlabel="t (s)",
           ylim=(-0.1, 1.1),
          )
     xticks!(ts_tick, tstr)
@@ -203,6 +207,7 @@ function plot_figures(dir_log, saved_data)
     p_u = plot(;
                title="rotor input",
                legend=:topleft,
+               ylabel="rotor force (N)",
               )
     xticks!(ts_tick, tstr_empty)
     plot!(p_u, ts, hcat(us_actual...)';
@@ -237,9 +242,11 @@ function plot_figures(dir_log, saved_data)
     #       ls=:dash,
     #      )
     ## ν
+    legend_ν = method == :adaptive ? :topleft : :left
     p_ν = plot(;
                title="virtual input",
-               legend=:left,
+               legend=legend_ν,
+               ylabel="ν (N or N⋅m)",
               )
     xticks!(ts_tick, tstr_empty)
     plot!(p_ν, ts, hcat(νs...)';
@@ -268,6 +275,6 @@ function test()
         @show method
         _dir_log = joinpath(dir_log, String(method))
         saved_data = run_sim(method, _dir_log)
-        plot_figures(_dir_log, saved_data)
+        plot_figures(method, _dir_log, saved_data)
     end
 end
