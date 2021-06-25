@@ -94,7 +94,7 @@ function test()
                  label=["x" "y" "z"],
                  legend=:topleft,
                 )
-    p__Λ = plot(ts, hcat(_Λs...)'; title="effectiveness matrix",
+    p__Λ = plot(ts, hcat(_Λs...)'; title="effectiveness vector",
                 label=["true" fill(nothing, dim_input-1)...],
                 color="black",
                 ls=:dash,
@@ -152,7 +152,7 @@ function test()
          )
     p_method = plot(;
                     title="method (adaptive: $(_method_dict[:adaptive]), static: $(_method_dict[:static]))",
-                    label="",
+                    label=nothing,
                     legend=:topleft,
                    )
     plot!(p_method, ts, hcat(_methods...)')
