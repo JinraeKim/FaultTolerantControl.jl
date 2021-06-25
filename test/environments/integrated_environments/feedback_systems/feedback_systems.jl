@@ -152,9 +152,11 @@ function test()
          )
     p_method = plot(;
                     title="method (adaptive: $(_method_dict[:adaptive]), static: $(_method_dict[:static]))",
-                    label=nothing,
                     legend=:topleft,
                    )
-    plot!(p_method, ts, hcat(_methods...)')
+    plot!(p_method, ts, hcat(_methods...)';
+          label="",
+          color=:black,
+         )
     plot(p_pos, p__Λ, p_u, p_ν, p_method; layout=(5, 1), size=(600, 600))
 end
