@@ -30,22 +30,22 @@ function run_sim(method, dir_log, file_name="switching.jld2")
         @unpack multicopter = plant
         pos_cmd_func = (t) -> [2, 1, -3]
         controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=pos_cmd_func)
-        # static allocators
+        # optimisation-based allocators
         # allocator = PseudoInverseAllocator(B)  # deprecated; it does not work when failures occur. I guess it's due to Moore-Penrose pseudo inverse.
         allocator = ConstrainedAllocator(B, u_min, u_max)
-        control_system_static = FTC.BacksteppingControl_StaticAllocator_ControlSystem(controller, allocator)
-        env_static = FTC.DelayFDI_Plant_BacksteppingControl_StaticAllocator_ControlSystem(plant, control_system_static)
+        control_system_optim = FTC.BacksteppingControl_StaticAllocator_ControlSystem(controller, allocator)
+        env_optim = FTC.DelayFDI_Plant_BacksteppingControl_StaticAllocator_ControlSystem(plant, control_system_optim)
         # adaptive allocators
         allocator = AdaptiveAllocator(B)
         control_system_adaptive = FTC.BacksteppingControl_AdaptiveAllocator_ControlSystem(controller, allocator)
         env_adaptive = FTC.DelayFDI_Plant_BacksteppingControl_AdaptiveAllocator_ControlSystem(plant, control_system_adaptive)
         p0, x0 = nothing, nothing
-        if method == :adaptive || method == :adaptive2static
+        if method == :adaptive || method == :adaptive2optim
             p0 = :adaptive
             x0 = State(env_adaptive)()  # start with adaptive CA
-        elseif method == :static
-            p0 = :static
-            x0 = State(env_static)()  # start with static CA
+        elseif method == :optim
+            p0 = :optim
+            x0 = State(env_optim)()  # start with optim CA
         else
             error("Invalid method")
         end
@@ -53,8 +53,8 @@ function run_sim(method, dir_log, file_name="switching.jld2")
             @log method = p
             if p == :adaptive
                 @nested_log Dynamics!(env_adaptive)(dx, x, p, t)
-            elseif p == :static
-                @nested_log Dynamics!(env_static)(dx, x, p, t)
+            elseif p == :optim
+                @nested_log Dynamics!(env_optim)(dx, x, p, t)
             else
                 error("Invalid method")
             end
@@ -62,9 +62,9 @@ function run_sim(method, dir_log, file_name="switching.jld2")
         # callback; TODO: a fancy way of utilising callbacks like SimulationLogger.jl...?
         __log_indicator__ = __LOG_INDICATOR__()
         affect! = (integrator) -> error("Invalid method")
-        if method == :adaptive2static
-            affect! = (integrator) -> integrator.p = :static
-        elseif method == :adaptive || method == :static
+        if method == :adaptive2optim
+            affect! = (integrator) -> integrator.p = :optim
+        elseif method == :adaptive || method == :optim
             affect! = (integrator) -> nothing
         end
         condition = function (x, t, integrator)
@@ -75,7 +75,7 @@ function run_sim(method, dir_log, file_name="switching.jld2")
                 u_actual = dict[:plant][:input][:u_actual]
                 is_switched = any(u_actual .>= u_max) || any(u_actual .<= u_min)
                 return is_switched
-            elseif p == :static
+            elseif p == :optim
                 return false
             else
                 error("Invalid method")
@@ -125,9 +125,9 @@ function plot_figures(method, dir_log, saved_data)
     Λ̂s = df.sol |> Map(datum -> datum.plant.FDI.Λ̂) |> collect
     _Λs = Λs |> Map(diag) |> collect
     _Λ̂s = Λ̂s |> Map(diag) |> collect
-    _method_dict = Dict(:adaptive => 0, :static => 1)
-    _methods = df.sol |> Map(datum -> _method = datum.method == :adaptive ? _method_dict[:adaptive] : _method_dict[:static]) |> collect
-    control_squares = us_actual |> Map(u -> u'*u) |> collect
+    _method_dict = Dict(:adaptive => 0, :optim => 1)
+    _methods = df.sol |> Map(datum -> _method = datum.method == :adaptive ? _method_dict[:adaptive] : _method_dict[:optim]) |> collect
+    control_squares = us_actual |> Map(u -> norm(u, 2)^2) |> collect
     control_inf_norms = us_actual |> Map(u -> norm(u, Inf)) |> collect
     _∫control_squares = cumul_integrate(ts, control_squares)  # ∫ u' * u
     ∫control_squares = _∫control_squares .- _∫control_squares[1]  # to make the first element 0
@@ -186,7 +186,7 @@ function plot_figures(method, dir_log, saved_data)
                )
     ## method
     p_method = plot(;
-                    title="method (adaptive: $(_method_dict[:adaptive]), static: $(_method_dict[:static]))",
+                    title="method (adaptive: $(_method_dict[:adaptive]), optim: $(_method_dict[:optim]))",
                     legend=:topleft,
                    )
     plot!(p_method, ts, hcat(_methods...)';
@@ -269,7 +269,7 @@ end
 function test()
     dir_log = "data"
     mkpath(dir_log)
-    methods = [:adaptive, :static, :adaptive2static]
+    methods = [:adaptive, :optim, :adaptive2optim]
     @show methods
     for method in methods
         @show method
