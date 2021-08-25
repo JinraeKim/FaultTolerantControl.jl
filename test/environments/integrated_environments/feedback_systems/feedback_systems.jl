@@ -26,7 +26,7 @@ function run_sim(method, dir_log, file_name="switching.jld2")
         fdi = DelayFDI(τ)
         faults = FaultSet(
                           LoE(3.0, 1, 0.3),  # t, index, level
-                          # LoE(5.0, 3, 0.1),
+                          LoE(5.0, 3, 0.1),
                          )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
         plant = FTC.DelayFDI_Plant(multicopter, fdi, faults)
         @unpack multicopter = plant
