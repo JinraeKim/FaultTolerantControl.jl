@@ -8,6 +8,8 @@ using DifferentialEquations
 using JLD2, FileIO
 using Printf
 using NumericalIntegration
+using ReferenceFrameRotations
+using StaticArrays: SMatrix
 
 
 function run_sim(method, dir_log, file_name="switching.jld2")
@@ -30,22 +32,22 @@ function run_sim(method, dir_log, file_name="switching.jld2")
         @unpack multicopter = plant
         pos_cmd_func = (t) -> [2, 1, -3]
         controller = BacksteppingPositionControllerEnv(m; pos_cmd_func=pos_cmd_func)
-        # static allocators
+        # optimisation-based allocators
         # allocator = PseudoInverseAllocator(B)  # deprecated; it does not work when failures occur. I guess it's due to Moore-Penrose pseudo inverse.
         allocator = ConstrainedAllocator(B, u_min, u_max)
-        control_system_static = FTC.BacksteppingControl_StaticAllocator_ControlSystem(controller, allocator)
-        env_static = FTC.DelayFDI_Plant_BacksteppingControl_StaticAllocator_ControlSystem(plant, control_system_static)
+        control_system_optim = FTC.BacksteppingControl_StaticAllocator_ControlSystem(controller, allocator)
+        env_optim = FTC.DelayFDI_Plant_BacksteppingControl_StaticAllocator_ControlSystem(plant, control_system_optim)
         # adaptive allocators
         allocator = AdaptiveAllocator(B)
         control_system_adaptive = FTC.BacksteppingControl_AdaptiveAllocator_ControlSystem(controller, allocator)
         env_adaptive = FTC.DelayFDI_Plant_BacksteppingControl_AdaptiveAllocator_ControlSystem(plant, control_system_adaptive)
         p0, x0 = nothing, nothing
-        if method == :adaptive || method == :adaptive2static
+        if method == :adaptive || method == :adaptive2optim
             p0 = :adaptive
             x0 = State(env_adaptive)()  # start with adaptive CA
-        elseif method == :static
-            p0 = :static
-            x0 = State(env_static)()  # start with static CA
+        elseif method == :optim
+            p0 = :optim
+            x0 = State(env_optim)()  # start with optim CA
         else
             error("Invalid method")
         end
@@ -53,8 +55,8 @@ function run_sim(method, dir_log, file_name="switching.jld2")
             @log method = p
             if p == :adaptive
                 @nested_log Dynamics!(env_adaptive)(dx, x, p, t)
-            elseif p == :static
-                @nested_log Dynamics!(env_static)(dx, x, p, t)
+            elseif p == :optim
+                @nested_log Dynamics!(env_optim)(dx, x, p, t)
             else
                 error("Invalid method")
             end
@@ -62,9 +64,9 @@ function run_sim(method, dir_log, file_name="switching.jld2")
         # callback; TODO: a fancy way of utilising callbacks like SimulationLogger.jl...?
         __log_indicator__ = __LOG_INDICATOR__()
         affect! = (integrator) -> error("Invalid method")
-        if method == :adaptive2static
-            affect! = (integrator) -> integrator.p = :static
-        elseif method == :adaptive || method == :static
+        if method == :adaptive2optim
+            affect! = (integrator) -> integrator.p = :optim
+        elseif method == :adaptive || method == :optim
             affect! = (integrator) -> nothing
         end
         condition = function (x, t, integrator)
@@ -75,7 +77,7 @@ function run_sim(method, dir_log, file_name="switching.jld2")
                 u_actual = dict[:plant][:input][:u_actual]
                 is_switched = any(u_actual .>= u_max) || any(u_actual .<= u_min)
                 return is_switched
-            elseif p == :static
+            elseif p == :optim
                 return false
             else
                 error("Invalid method")
@@ -115,19 +117,28 @@ function plot_figures(method, dir_log, saved_data)
     xs_des = poss_desired |> Map(pos -> pos[1]) |> collect
     ys_des = poss_desired |> Map(pos -> pos[2]) |> collect
     zs_des = poss_desired |> Map(pos -> pos[3]) |> collect
+    Rs = df.sol |> Map(datum -> datum.plant.state.R) |> collect
+    eulers = Rs |> Map(R -> ReferenceFrameRotations.dcm_to_angle(SMatrix{3, 3}(R))) |> collect
+    ψs = eulers |> Map(euler -> euler.a1) |> collect
+    θs = eulers |> Map(euler -> euler.a2) |> collect
+    ϕs = eulers |> Map(euler -> euler.a3) |> collect
     us_cmd = df.sol |> Map(datum -> datum.plant.input.u_cmd) |> collect
     us_actual = df.sol |> Map(datum -> datum.plant.input.u_actual) |> collect
     us_saturated = df.sol |> Map(datum -> datum.plant.input.u_saturated) |> collect
     us_cmd_faulted = df.sol |> Map(datum -> datum.plant.FDI.Λ * datum.plant.input.u_cmd) |> collect
     νs = df.sol |> Map(datum -> datum.plant.input.ν) |> collect
+    Fs = νs |> Map(ν -> ν[1]) |> collect
+    Ms = νs |> Map(ν -> ν[2:4]) |> collect
     νds = df.sol |> Map(datum -> datum.νd) |> collect
+    Fds = νds |> Map(ν -> ν[1]) |> collect
+    Mds = νds |> Map(ν -> ν[2:4]) |> collect
     Λs = df.sol |> Map(datum -> datum.plant.FDI.Λ) |> collect
     Λ̂s = df.sol |> Map(datum -> datum.plant.FDI.Λ̂) |> collect
     _Λs = Λs |> Map(diag) |> collect
     _Λ̂s = Λ̂s |> Map(diag) |> collect
-    _method_dict = Dict(:adaptive => 0, :static => 1)
-    _methods = df.sol |> Map(datum -> _method = datum.method == :adaptive ? _method_dict[:adaptive] : _method_dict[:static]) |> collect
-    control_squares = us_actual |> Map(u -> u'*u) |> collect
+    _method_dict = Dict(:adaptive => 0, :optim => 1)
+    _methods = df.sol |> Map(datum -> _method = datum.method == :adaptive ? _method_dict[:adaptive] : _method_dict[:optim]) |> collect
+    control_squares = us_actual |> Map(u -> norm(u, 2)^2) |> collect
     control_inf_norms = us_actual |> Map(u -> norm(u, Inf)) |> collect
     _∫control_squares = cumul_integrate(ts, control_squares)  # ∫ u' * u
     ∫control_squares = _∫control_squares .- _∫control_squares[1]  # to make the first element 0
@@ -137,7 +148,7 @@ function plot_figures(method, dir_log, saved_data)
     @show ∫control_inf_norms[end]
     # plots
     ts_tick = ts[1:100:end]
-    tstr = ts_tick |> Map(t -> @sprintf("%0.2f", t)) |> collect
+    tstr = ts_tick |> Map(t -> @sprintf("%0.0f", t)) |> collect
     tstr_empty = ts_tick |> Map(t -> "") |> collect
     ## pos
     p_pos = plot(;
@@ -186,7 +197,7 @@ function plot_figures(method, dir_log, saved_data)
                )
     ## method
     p_method = plot(;
-                    title="method (adaptive: $(_method_dict[:adaptive]), static: $(_method_dict[:static]))",
+                    title="method (adaptive: $(_method_dict[:adaptive]), optim: $(_method_dict[:optim]))",
                     legend=:topleft,
                    )
     plot!(p_method, ts, hcat(_methods...)';
@@ -242,34 +253,116 @@ function plot_figures(method, dir_log, saved_data)
     #       ls=:dash,
     #      )
     ## ν
-    legend_ν = method == :adaptive ? :topleft : :left
-    p_ν = plot(;
-               title="virtual input",
-               legend=legend_ν,
-               ylabel="ν (N or N⋅m)",
+    # legend_ν = method == :adaptive ? :topleft : :left
+    legend_ν = :bottomleft
+    # p_ν = plot(;
+    #            title="virtual input",
+    #            legend=legend_ν,
+    #            ylabel="ν (N or N⋅m)",
+    #           )
+    # xticks!(ts_tick, tstr_empty)
+    # plot!(p_ν, ts, hcat(νs...)';
+    #       label=["actual input" fill(nothing, 4-1)...],
+    #       color=:black,
+    #      )
+    # plot!(p_ν, ts, hcat(νds...)';
+    #       label=["desired input" fill(nothing, 4-1)...],
+    #       color=:red,
+    #       ls=:dash,
+    #      )
+    # force
+    p_F = plot(;
+               title="force",
+               ylabel="F (N)",
+               ylim=(0, 60),
+               legend=:bottomleft,
               )
     xticks!(ts_tick, tstr_empty)
-    plot!(p_ν, ts, hcat(νs...)';
-          label=["actual input" fill(nothing, 4-1)...],
+    plot!(p_F, ts, hcat(Fs...)';
+          label=["actual force" fill(nothing, 4-1)...],
           color=:black,
          )
-    plot!(p_ν, ts, hcat(νds...)';
-          label=["desired input" fill(nothing, 4-1)...],
+    plot!(p_F, ts, hcat(Fds...)';
+          label=["desired force" fill(nothing, 4-1)...],
           color=:red,
           ls=:dash,
          )
+    # moment
+    p_M = plot(;
+               title="moment",
+               ylabel="M (N⋅m)",
+               xlabel="t (s)",
+               ylim=(-100, 100),
+               legend=:bottomleft,
+              )
+    xticks!(ts_tick, tstr)
+    plot!(p_M, ts, hcat(Ms...)';
+          label=["actual moment" fill(nothing, 4-1)...],
+          color=:black,
+         )
+    plot!(p_M, ts, hcat(Mds...)';
+          label=["desired moment" fill(nothing, 4-1)...],
+          color=:red,
+          ls=:dash,
+         )
+    ## figure zoom
+    if method != :adaptive
+        # fault 1
+        t1_min, t1_max = 2, 4
+        idx1 = findall(t -> t > t1_min && t < t1_max, ts)
+        ts_idx1 = ts[idx1]
+        Ms_idx1 = Ms[idx1]
+        Mds_idx1 = Mds[idx1]
+        @show size(ts_idx1)
+        @show size(hcat(Mds_idx1...)')
+        plot!(p_M, [ts_idx1 ts_idx1], [hcat(Ms_idx1...)' hcat(Mds_idx1...)'];
+              inset = (1, bbox(0.1, 0.05, 0.3, 0.3)), subplot=2,
+              ylim=(-5, 5), bg_inside=nothing, label=nothing,
+              color=[:black :red], linestyle=[:solid :dash],
+             )
+        # fault 2
+        t2_min, t2_max = 4, 6
+        idx2 = findall(t -> t > t2_min && t < t2_max, ts)
+        ts_idx2 = ts[idx2]
+        Ms_idx2 = Ms[idx2]
+        Mds_idx2 = Mds[idx2]
+        @show size(ts_idx2)
+        @show size(hcat(Mds_idx2...)')
+        plot!(p_M, [ts_idx2 ts_idx2], [hcat(Ms_idx2...)' hcat(Mds_idx2...)'];
+              inset = (1, bbox(0.5, 0.05, 0.3, 0.3)), subplot=3,
+              ylim=(-5, 5), bg_inside=nothing, label=nothing,
+              color=[:black :red], linestyle=[:solid :dash],
+             )
+    end
     ### inputs
-    p_input = plot(p_u, p_ν, p_method;
+    # p_input = plot(p_u, p_ν, p_method;
+    p_input = plot(p_u, p_F, p_M;
                    link=:x,  # aligned x axes
                    layout=(3, 1), size=(600, 600),
                   )
     savefig(p_input, joinpath(dir_log, "input.pdf"))
+    # TODO: issue; adaptive control allocation seems not properly regulate ω_z error
+    ### eulers
+    # p_euler = plot(;)
+    # plot!(p_euler, ts, rad2deg.(ϕs);
+    #       color=1,
+    #       label="ϕ (deg)",
+    #      )
+    # plot!(p_euler, ts, rad2deg.(θs);
+    #       color=2,
+    #       label="θ (deg)",
+    #      )
+    # plot!(p_euler, ts, rad2deg.(ψs);
+    #       color=3,
+    #       label="ψ (deg)",
+    #      )
+    # savefig(p_euler, joinpath(dir_log, "euler.pdf"))
 end
 
 function test()
     dir_log = "data"
     mkpath(dir_log)
-    methods = [:adaptive, :static, :adaptive2static]
+    methods = [:adaptive, :optim, :adaptive2optim]
     @show methods
     for method in methods
         @show method

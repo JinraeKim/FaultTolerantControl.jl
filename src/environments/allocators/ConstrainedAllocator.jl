@@ -24,8 +24,8 @@ function (allocator::ConstrainedAllocator)(ν, Λ=Diagonal(ones(size(ν)));
                                            p=Inf, silent_solver=true)
     @unpack u_min, u_max, u, B = allocator
     prob = minimize(
-                    # norm(u, p)
-                    sum(u)
+                    norm(u, p)
+                    # sum(u)
                     + 1e5*norm(ν - B*Λ*u, 1)  # exact penalty method
                    )
     prob.constraints += [
