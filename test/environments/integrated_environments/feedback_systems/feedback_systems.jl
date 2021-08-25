@@ -341,21 +341,22 @@ function plot_figures(method, dir_log, saved_data)
                    layout=(3, 1), size=(600, 600),
                   )
     savefig(p_input, joinpath(dir_log, "input.pdf"))
+    # TODO: issue; adaptive control allocation seems not properly regulate ω_z error
     ### eulers
-    p_euler = plot(;)
-    plot!(p_euler, ts, rad2deg.(ϕs);
-          color=1,
-          label="ϕ (deg)",
-         )
-    plot!(p_euler, ts, rad2deg.(θs);
-          color=2,
-          label="θ (deg)",
-         )
-    plot!(p_euler, ts, rad2deg.(ψs);
-          color=3,
-          label="ψ (deg)",
-         )
-    savefig(p_euler, joinpath(dir_log, "euler.pdf"))
+    # p_euler = plot(;)
+    # plot!(p_euler, ts, rad2deg.(ϕs);
+    #       color=1,
+    #       label="ϕ (deg)",
+    #      )
+    # plot!(p_euler, ts, rad2deg.(θs);
+    #       color=2,
+    #       label="θ (deg)",
+    #      )
+    # plot!(p_euler, ts, rad2deg.(ψs);
+    #       color=3,
+    #       label="ψ (deg)",
+    #      )
+    # savefig(p_euler, joinpath(dir_log, "euler.pdf"))
 end
 
 function test()
