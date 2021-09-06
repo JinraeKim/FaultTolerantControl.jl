@@ -1,7 +1,7 @@
 name = "FaultTolerantControl"
 uuid = "45299f66-0548-4da8-9567-4dae0facc19d"
 authors = ["JinraeKim <kjl950403@gmail.com> and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
