@@ -22,7 +22,8 @@ struct BacksteppingPositionControllerEnv <: AbstractEnv
         Kx = m*1*Matrix(I, 3, 3)
         Kv = m*1*1.82*Matrix(I, 3, 3)
         Kp = hcat(Kx, Kv)
-        Q = Diagonal(1*ones(6))
+        # Q = Diagonal(1*ones(6))
+        Q = diagm(1*ones(6))
         # thrust
         Kt = Diagonal(4*ones(3))
         # angular
