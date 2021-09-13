@@ -23,8 +23,7 @@ export AbstractActuatorFault, LoE
 export AbstractFDI, LPFFDI, DelayFDI
 # allocator
 export PseudoInverseAllocator, ConstrainedAllocator, AdaptiveAllocator
-# controllers
-export BacksteppingPositionControllerEnv
+
 
 include("utils.jl")
 include("faults.jl")
