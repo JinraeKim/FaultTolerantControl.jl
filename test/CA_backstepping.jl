@@ -12,9 +12,10 @@ using StaticArrays: SMatrix
 using DataFrames
 
 
-function run_sim(method, multicopter, faults, fdi, pos_cmd_func, tf;
+function run_sim(method, multicopter, faults, fdi, pos_cmd_func, tf,
+        dir_log;
         savestep=0.01,
-        dir_log="data", file_name="switching.jld2",
+        file_name="switching.jld2",
     )
     mkpath(dir_log)
     file_path = joinpath(dir_log, file_name)
@@ -361,7 +362,7 @@ end
 
 
 function main()
-    dir_log = "data"
+    dir_log = "test/data"
     mkpath(dir_log)
     # methods = [:adaptive, :optim, :adaptive2optim]
     method = :adaptive
@@ -379,8 +380,7 @@ function main()
     tf = 15.0
     # run sim and save fig
     _dir_log = joinpath(dir_log, String(method))
-    saved_data = run_sim(method, multicopter, faults, fdi, pos_cmd_func, tf;
-                         dir_log=_dir_log,
+    saved_data = run_sim(method, multicopter, faults, fdi, pos_cmd_func, tf, _dir_log;
                         )
     plot_figures(method, _dir_log, saved_data, pos_cmd_func)
 end

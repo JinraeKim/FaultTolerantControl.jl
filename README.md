@@ -10,8 +10,8 @@ It is rewritten to be compatible with FlightSims.jl@1.0.0, Julia@1.7.0.
 ## FTC using various CA (control allocation) methods
 See `test/CA_backstepping.jl`.
 
-![ex_screenshot](./data/adaptive/state.png)
-![ex_screenshot](./data/adaptive/input.png)
+![ex_screenshot](./test/data/adaptive/state.png)
+![ex_screenshot](./test/data/adaptive/input.png)
 
 - [ ] Make a trajectory generator; to save trajectory command
 via JLD2 safely (without reconstruction).
