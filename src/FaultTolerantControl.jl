@@ -11,7 +11,7 @@ import FlightSims: State, Params, Dynamics!, Dynamics
 import FlightSims: Command
 using DifferentialEquations
 using LinearAlgebra
-using Convex, Mosek, MosekTools
+using Convex, SCS
 using Transducers, UnPack, ComponentArrays
 import SplitApplyCombine
 import MatrixEquations

@@ -1,7 +1,7 @@
 abstract type AbstractPlant <: AbstractEnv end
 
 struct DelayFDI_Plant <: AbstractPlant
-    multicopter::MulticopterEnv
+    multicopter::Multicopter
     fdi::DelayFDI
     faults::Vector{AbstractFault}
 end

@@ -3,7 +3,7 @@ abstract type AbstractControlSystem <: AbstractEnv end
 
 # BacksteppingControl_StaticAllocator_ControlSystem
 struct BacksteppingControl_StaticAllocator_ControlSystem <: AbstractControlSystem
-    controller::BacksteppingPositionControllerEnv
+    controller::BacksteppingPositionController
     allocator::StaticAllocator
 end
 
@@ -34,7 +34,7 @@ end
 
 # BacksteppingControl_AdaptiveAllocator_ControlSystem
 struct BacksteppingControl_AdaptiveAllocator_ControlSystem <: AbstractControlSystem
-    controller::BacksteppingPositionControllerEnv
+    controller::BacksteppingPositionController
     allocator::AdaptiveAllocator
 end
 
