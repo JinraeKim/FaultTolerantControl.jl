@@ -9,7 +9,6 @@ const FS = FlightSims
 # `import` will help you to automatically extend the imported methods
 import FlightSims: State, Params, Dynamics!, Dynamics
 import FlightSims: Command
-using DifferentialEquations
 using LinearAlgebra
 using Convex, SCS
 using Transducers, UnPack, ComponentArrays

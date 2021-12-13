@@ -17,4 +17,4 @@ See `test/CA_backstepping.jl`.
 via JLD2 safely (without reconstruction).
 
 ### Notes
-Previously written examples are deprecated; see the previous versions, e.g., FaultTolerantControl@0.2.0.
+Previously written examples are deprecated; see previous versions, e.g., FaultTolerantControl@0.2.0.
