@@ -57,7 +57,7 @@ function sample(multicopter::Multicopter, min_nt, max_nt)
     (p, v, R, ω,)  # tuple; args_multicopter
 end
 
-function run_sim(method, args_multicopter, multicopter, faults, fdi, θs, tf, dir_log;
+function run_sim(method, multicopter, args_multicopter, faults, fdi, θs, tf, dir_log;
         t0=0.0,
         savestep=0.01,
         will_plot=false,
@@ -438,7 +438,7 @@ function main(N=1; collector=tcollect, will_plot=false, seed=2021)
     min_nt, max_nt = distribution_info(manoeuvre)
     x0s = 1:N |> Map(i -> sample(multicopter, min_nt, max_nt)) |> collect
     @time saved_data_array = zip(1:N, x0s) |> MapSplat((i, x0) ->
-                                                       run_sim(method, x0, multicopter, faults, fdi, θs, tf,
+                                                       run_sim(method, multicopter, x0, faults, fdi, θs, tf,
                                                                joinpath(dir_log, lpad(string(i), 4, '0')); will_plot=will_plot)) |> collector
     nothing
 end
