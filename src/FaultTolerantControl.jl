@@ -10,7 +10,7 @@ const FS = FlightSims
 import FlightSims: State, Params, Dynamics!, Dynamics
 import FlightSims: Command
 using LinearAlgebra
-using Convex, SCS
+using Convex, Mosek, MosekTools
 using Transducers, UnPack, ComponentArrays
 import SplitApplyCombine
 import MatrixEquations

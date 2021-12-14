@@ -11,9 +11,10 @@ using ReferenceFrameRotations
 using StaticArrays: SMatrix
 using DataFrames
 using Random
+using DifferentialEquations
 
 
-function run_sim(multicopter, faults, fdi, θs, tf, dir_log;
+function run_sim(method, multicopter, faults, fdi, θs, tf, dir_log;
         t0=0.0,
         savestep=0.01,
         will_plot=false,
@@ -29,58 +30,58 @@ function run_sim(multicopter, faults, fdi, θs, tf, dir_log;
         @unpack multicopter = plant
         controller = BacksteppingPositionController(m; pos_cmd_func=pos_cmd_func)
         # optimisation-based allocators
-        # allocator = PseudoInverseAllocator(B)  # deprecated; it does not work when failures occur. I guess it's due to Moore-Penrose pseudo inverse.
-        # allocator = ConstrainedAllocator(B, u_min, u_max)
-        # control_system_optim = FTC.BacksteppingControl_StaticAllocator_ControlSystem(controller, allocator)
-        # env_optim = FTC.DelayFDI_Plant_BacksteppingControl_StaticAllocator_ControlSystem(plant, control_system_optim)
+        allocator = PseudoInverseAllocator(B)  # deprecated; it does not work when failures occur. I guess it's due to Moore-Penrose pseudo inverse.
+        allocator = ConstrainedAllocator(B, u_min, u_max)
+        control_system_optim = FTC.BacksteppingControl_StaticAllocator_ControlSystem(controller, allocator)
+        env_optim = FTC.DelayFDI_Plant_BacksteppingControl_StaticAllocator_ControlSystem(plant, control_system_optim)
         # adaptive allocators
         allocator = AdaptiveAllocator(B)
         control_system_adaptive = FTC.BacksteppingControl_AdaptiveAllocator_ControlSystem(controller, allocator)
         env_adaptive = FTC.DelayFDI_Plant_BacksteppingControl_AdaptiveAllocator_ControlSystem(plant, control_system_adaptive)
-        # p0, x0 = nothing, nothing
-        # if method == :adaptive || method == :adaptive2optim
+        p0, x0 = nothing, nothing
+        if method == :adaptive || method == :adaptive2optim
             p0 = :adaptive
             x0 = State(env_adaptive)()  # start with adaptive CA
-        # elseif method == :optim
-        #     p0 = :optim
-        #     x0 = State(env_optim)()  # start with optim CA
-        # else
-        #     error("Invalid method")
-        # end
+        elseif method == :optim
+            p0 = :optim
+            x0 = State(env_optim)()  # start with optim CA
+        else
+            error("Invalid method")
+        end
         @Loggable function dynamics!(dx, x, p, t)
-            # @log method = p
-            # if p == :adaptive
+            @log method = p
+            if p == :adaptive
                 @nested_log Dynamics!(env_adaptive)(dx, x, p, t)
-            # elseif p == :optim
-            #     @nested_log Dynamics!(env_optim)(dx, x, p, t)
-            # else
-            #     error("Invalid method")
-            # end
+            elseif p == :optim
+                @nested_log Dynamics!(env_optim)(dx, x, p, t)
+            else
+                error("Invalid method")
+            end
         end
         # callback; TODO: a fancy way of utilising callbacks like SimulationLogger.jl...?
-        # __log_indicator__ = __LOG_INDICATOR__()
-        # affect! = (integrator) -> error("Invalid method")
-        # if method == :adaptive2optim
-        #     affect! = (integrator) -> integrator.p = :optim
-        # elseif method == :adaptive || method == :optim
-        #     affect! = (integrator) -> nothing
-        # end
-        # condition = function (x, t, integrator)
-        #     p = integrator.p
-        #     if p == :adaptive
-        #         x = copy(x)
-        #         dict = Dynamics!(env_adaptive)(zero.(x), x, p, t, __log_indicator__)
-        #         u_actual = dict[:plant][:input][:u_actual]
-        #         is_switched = any(u_actual .>= u_max) || any(u_actual .<= u_min)
-        #         return is_switched
-        #     elseif p == :optim
-        #         return false
-        #     else
-        #         error("Invalid method")
-        #     end
-        # end
-        # cb_switch = DiscreteCallback(condition, affect!)
-        # cb = CallbackSet(cb_switch)
+        __log_indicator__ = __LOG_INDICATOR__()
+        affect! = (integrator) -> error("Invalid method")
+        if method == :adaptive2optim
+            affect! = (integrator) -> integrator.p = :optim
+        elseif method == :adaptive || method == :optim
+            affect! = (integrator) -> nothing
+        end
+        condition = function (x, t, integrator)
+            p = integrator.p
+            if p == :adaptive
+                x = copy(x)
+                dict = Dynamics!(env_adaptive)(zero.(x), x, p, t, __log_indicator__)
+                u_actual = dict[:plant][:input][:u_actual]
+                is_switched = any(u_actual .>= u_max) || any(u_actual .<= u_min)
+                return is_switched
+            elseif p == :optim
+                return false
+            else
+                error("Invalid method")
+            end
+        end
+        cb_switch = DiscreteCallback(condition, affect!)
+        cb = CallbackSet(cb_switch)
         # sim
         simulator = Simulator(
                               x0, dynamics!, p0;
@@ -88,25 +89,22 @@ function run_sim(multicopter, faults, fdi, θs, tf, dir_log;
                              )
         df = solve(simulator;
                          savestep=savestep,
-                         # callback=cb,
+                         callback=cb,
                         )
         FileIO.save(file_path, Dict(
                                     "df" => df,
-                                    "dim_input" => dim_input,
-                                    "u_max" => u_max,
-                                    "u_min" => u_min,
-                                    "tf" => tf,
                                    ))
     # end
     saved_data = JLD2.load(file_path)
     if will_plot
-        plot_figures(dir_log, saved_data, θs)
+        plot_figures(method, multicopter, dir_log, saved_data, θs, tf)
     end
 end
 
 
-function plot_figures(dir_log, saved_data, θs)
-    @unpack df, dim_input, u_max, u_min, tf = saved_data
+function plot_figures(method, multicopter, dir_log, saved_data, θs, tf)
+    @unpack u_min, u_max, dim_input = multicopter
+    @unpack df = saved_data
     pos_cmd_func = Bezier(θs; tf=tf)
     # data
     ts = df.time
@@ -137,8 +135,8 @@ function plot_figures(dir_log, saved_data, θs)
     Λ̂s = df.sol |> Map(datum -> datum.plant.FDI.Λ̂) |> collect
     _Λs = Λs |> Map(diag) |> collect
     _Λ̂s = Λ̂s |> Map(diag) |> collect
-    # _method_dict = Dict(:adaptive => 0, :optim => 1)
-    # _methods = df.sol |> Map(datum -> _method = datum.method == :adaptive ? _method_dict[:adaptive] : _method_dict[:optim]) |> collect
+    _method_dict = Dict(:adaptive => 0, :optim => 1)
+    _methods = df.sol |> Map(datum -> _method = datum.method == :adaptive ? _method_dict[:adaptive] : _method_dict[:optim]) |> collect
     control_squares = us_actual |> Map(u -> norm(u, 2)^2) |> collect
     control_inf_norms = us_actual |> Map(u -> norm(u, Inf)) |> collect
     _∫control_squares = cumul_integrate(ts, control_squares)  # ∫ u' * u
@@ -196,25 +194,25 @@ function plot_figures(dir_log, saved_data, θs)
                 ls=:dash,
                 legend=:right,
                )
-    ## method
-    # p_method = plot(;
-    #                 title="method (adaptive: $(_method_dict[:adaptive]), optim: $(_method_dict[:optim]))",
-    #                 legend=:topleft,
-    #                )
-    # plot!(p_method, ts, hcat(_methods...)';
-    #       label="",
-    #       color=:black,
-    #       ylabel="method",
-    #       xlabel="t (s)",
-    #       ylim=(-0.1, 1.1),
-    #      )
-    # xticks!(ts_tick, tstr)
-    ### states
-    # p_state = plot(p_pos, p__Λ, p_method;
-    #                link=:x,  # aligned x axes
-    #                layout=(3, 1), size=(600, 600),
-    #               )
-    # savefig(p_state, joinpath(dir_log, "state.pdf"))
+    # method
+     p_method = plot(;
+                     title="method (adaptive: $(_method_dict[:adaptive]), optim: $(_method_dict[:optim]))",
+                     legend=:topleft,
+                    )
+     plot!(p_method, ts, hcat(_methods...)';
+           label="",
+           color=:black,
+           ylabel="method",
+           xlabel="t (s)",
+           ylim=(-0.1, 1.1),
+          )
+     xticks!(ts_tick, tstr)
+    ## states
+     p_state = plot(p_pos, p__Λ, p_method;
+                    link=:x,  # aligned x axes
+                    layout=(3, 1), size=(600, 600),
+                   )
+     savefig(p_state, joinpath(dir_log, "state.pdf"))
     p_state = plot(p_pos, p__Λ;
                    link=:x,  # aligned x axes
                    layout=(2, 1), size=(600, 600),
@@ -378,21 +376,22 @@ function main(N=1; collector=tcollect, will_plot=false, seed=2021)
         error("Invalid collector")
     end
     Random.seed!(seed)
-    dir_log = "test/data"
+    _dir_log = "test/data"
+    method = :adaptive
+    dir_log = joinpath(_dir_log, String(method))
     # methods = [:adaptive, :optim, :adaptive2optim]
-    # method = :adaptive
-    multicopter = LeeHexacopter()
+    multicopter = LeeHexacopter()  # dummy
     faults = FaultSet(
                       LoE(3.0, 1, 0.0),
                       LoE(5.0, 3, 0.0),  # t, index, level
                      )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
     τ = 0.0
     fdi = DelayFDI(τ)
-    θs = [[2, 1, -3]]  # constant position tracking
-    # θs = [[0, 0, 0], [3, 4, 5], [2, 1, -3]]
-    tf = 15.0
+    θs = [rand(3)]  # constant position tracking
+    # θs = [[0, 0, 0], [3, 4, 5], [2, 1, -3]]  # Bezier curve
+    tf = 20.0
     # run sim and save fig
-    @time saved_data_array = 1:N |> Map(i -> run_sim(multicopter, faults, fdi, θs, tf,
+    @time saved_data_array = 1:N |> Map(i -> run_sim(method, multicopter, faults, fdi, θs, tf,
                                                      joinpath(dir_log, lpad(string(i), 4, '0')); will_plot=will_plot)) |> collector
     nothing
 end

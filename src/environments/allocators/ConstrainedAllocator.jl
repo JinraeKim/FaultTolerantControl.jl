@@ -34,7 +34,9 @@ function (allocator::ConstrainedAllocator)(ν, Λ=Diagonal(ones(size(ν)));
                          # ν == B*Λ*u  # equality; replaced by exact penalty method
                         ]
     Convex.solve!(prob,
-                  SCS.Optimizer();
-                  silent_solver=silent_solver, warmstart=true)
+                  # SCS.Optimizer();
+                  Mosek.Optimizer();  # best
+                  silent_solver=silent_solver,
+                  verbose=false)
     u.value[:]  # dim: n×1 -> n
 end
