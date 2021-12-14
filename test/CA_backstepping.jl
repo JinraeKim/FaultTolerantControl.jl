@@ -93,18 +93,19 @@ function run_sim(method, multicopter, faults, fdi, θs, tf, dir_log;
                         )
         FileIO.save(file_path, Dict(
                                     "df" => df,
+                                    "method" => String(method),
                                    ))
     # end
     saved_data = JLD2.load(file_path)
     if will_plot
-        plot_figures(method, multicopter, dir_log, saved_data, θs, tf)
+        plot_figures(multicopter, dir_log, saved_data, θs, tf)
     end
 end
 
 
-function plot_figures(method, multicopter, dir_log, saved_data, θs, tf)
+function plot_figures(multicopter, dir_log, saved_data, θs, tf)
     @unpack u_min, u_max, dim_input = multicopter
-    @unpack df = saved_data
+    @unpack df, method = saved_data
     pos_cmd_func = Bezier(θs; tf=tf)
     # data
     ts = df.time
@@ -376,14 +377,13 @@ function main(N=1; collector=tcollect, will_plot=false, seed=2021)
         error("Invalid collector")
     end
     Random.seed!(seed)
-    _dir_log = "test/data"
+    dir_log = "test/data"
     method = :adaptive
-    dir_log = joinpath(_dir_log, String(method))
     # methods = [:adaptive, :optim, :adaptive2optim]
     multicopter = LeeHexacopter()  # dummy
     faults = FaultSet(
                       LoE(3.0, 1, 0.0),
-                      LoE(5.0, 3, 0.0),  # t, index, level
+                      LoE(3.0, 3, 0.0),  # t, index, level
                      )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
     τ = 0.0
     fdi = DelayFDI(τ)
