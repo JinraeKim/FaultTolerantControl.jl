@@ -14,12 +14,15 @@ Run this at `./`.
 ![ex_screenshot](./data/adaptive/state.png)
 ![ex_screenshot](./data/adaptive/input.png)
 
-Parallel trajectory generation; benchmarks with
-i) M1 Macbook Air: 7 threads, about 4s / 7 trajectories
-ii) Ryzen 5900X: 24 threads, about 5s / 24 trajectories
+- Parallel trajectory generation is available. Benchmarks with
+1) M1 Macbook Air: 7 threads, about 4s / 7 trajectories
+2) Ryzen 5900X: 24 threads, about 5s / 24 trajectories.
+Note that the benchmark results may be outdated.
 
-- [ ] Make a trajectory generator; to save trajectory command
+## To-do
+- [x] Make a trajectory generator; to save trajectory command
 via JLD2 safely (without reconstruction).
+- [ ] Calculate objective functional
 
 ### Notes
 Previously written examples are deprecated; see previous versions, e.g., FaultTolerantControl@0.2.0.
