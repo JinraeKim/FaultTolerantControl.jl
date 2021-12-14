@@ -22,11 +22,14 @@ export AbstractActuatorFault, LoE
 export AbstractFDI, LPFFDI, DelayFDI
 # allocator
 export PseudoInverseAllocator, ConstrainedAllocator, AdaptiveAllocator
+# trajectory generation
+export Bezier
 
 
 include("utils.jl")
 include("faults.jl")
 include("environments/environments.jl")
+include("trajectory_generation.jl")
 
 
 end

@@ -13,11 +13,12 @@ using DataFrames
 using Random
 
 
-function run_sim(multicopter, faults, fdi, pos_cmd_func, tf,
-        dir_log;
+function run_sim(multicopter, faults, fdi, θs, tf, dir_log;
+        t0=0.0,
         savestep=0.01,
         will_plot=false,
     )
+    pos_cmd_func = Bezier(θs; tf=tf)
     mkpath(dir_log)
     file_path = joinpath(dir_log, "traj.jld2")
     saved_data = nothing
@@ -83,7 +84,7 @@ function run_sim(multicopter, faults, fdi, pos_cmd_func, tf,
         # sim
         simulator = Simulator(
                               x0, dynamics!, p0;
-                              tf=tf,
+                              t0=t0, tf=tf,
                              )
         df = solve(simulator;
                          savestep=savestep,
@@ -94,17 +95,19 @@ function run_sim(multicopter, faults, fdi, pos_cmd_func, tf,
                                     "dim_input" => dim_input,
                                     "u_max" => u_max,
                                     "u_min" => u_min,
+                                    "tf" => tf,
                                    ))
     # end
     saved_data = JLD2.load(file_path)
     if will_plot
-        plot_figures(dir_log, saved_data, pos_cmd_func)
+        plot_figures(dir_log, saved_data, θs)
     end
 end
 
 
-function plot_figures(dir_log, saved_data, pos_cmd_func)
-    @unpack df, dim_input, u_max, u_min = saved_data
+function plot_figures(dir_log, saved_data, θs)
+    @unpack df, dim_input, u_max, u_min, tf = saved_data
+    pos_cmd_func = Bezier(θs; tf=tf)
     # data
     ts = df.time
     poss = df.sol |> Map(datum -> datum.plant.state.p) |> collect
@@ -347,44 +350,49 @@ function plot_figures(dir_log, saved_data, pos_cmd_func)
     savefig(p_input, joinpath(dir_log, "input.pdf"))
     savefig(p_input, joinpath(dir_log, "input.png"))
     # TODO: issue; adaptive control allocation seems not properly regulate ω_z error
-    ### eulers
-    # p_euler = plot(;)
-    # plot!(p_euler, ts, rad2deg.(ϕs);
-    #       color=1,
-    #       label="ϕ (deg)",
-    #      )
-    # plot!(p_euler, ts, rad2deg.(θs);
-    #       color=2,
-    #       label="θ (deg)",
-    #      )
-    # plot!(p_euler, ts, rad2deg.(ψs);
-    #       color=3,
-    #       label="ψ (deg)",
-    #      )
-    # savefig(p_euler, joinpath(dir_log, "euler.pdf"))
+    ## eulers
+     p_euler = plot(;)
+     plot!(p_euler, ts, rad2deg.(ϕs);
+           color=1,
+           label="ϕ (deg)",
+          )
+     plot!(p_euler, ts, rad2deg.(θs);
+           color=2,
+           label="θ (deg)",
+          )
+     plot!(p_euler, ts, rad2deg.(ψs);
+           color=3,
+           label="ψ (deg)",
+          )
+     savefig(p_euler, joinpath(dir_log, "euler.pdf"))
 end
 
 
-function main(; seed=2021)
+function main(N=1; collector=tcollect, will_plot=false, seed=2021)
+    if collector == tcollect
+        println("Parallel computing...")
+        will_plot == true ? error("plotting figures not supported in tcollect") : nothing
+    elseif collector == collect
+        println("Sequential computing...")
+    else
+        error("Invalid collector")
+    end
     Random.seed!(seed)
     dir_log = "test/data"
     # methods = [:adaptive, :optim, :adaptive2optim]
     # method = :adaptive
-    # _multicopter = LeeHexacopter()
-    # u_max = (1/3) * _multicopter.m * _multicopter.g * ones(_multicopter.dim_input)
-    # multicopter = LeeHexacopter(u_max=u_max)
     multicopter = LeeHexacopter()
     faults = FaultSet(
-                      LoE(3.0, 1, 0.0),  # t, index, level
-                      # LoE(5.0, 3, 0.1),
+                      LoE(3.0, 1, 0.0),
+                      LoE(5.0, 3, 0.0),  # t, index, level
                      )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
     τ = 0.0
     fdi = DelayFDI(τ)
-    pos_cmd_func = (t) -> [2, 1, -3]
+    θs = [[2, 1, -3]]  # constant position tracking
+    # θs = [[0, 0, 0], [3, 4, 5], [2, 1, -3]]
     tf = 15.0
     # run sim and save fig
-    N = 7
-    @time saved_data_array = 1:N |> Map(i -> run_sim(multicopter, faults, fdi, pos_cmd_func, tf,
-                                                     joinpath(dir_log, lpad(string(i), 4, '0')))) |> tcollect
+    @time saved_data_array = 1:N |> Map(i -> run_sim(multicopter, faults, fdi, θs, tf,
+                                                     joinpath(dir_log, lpad(string(i), 4, '0')); will_plot=will_plot)) |> collector
     nothing
 end
