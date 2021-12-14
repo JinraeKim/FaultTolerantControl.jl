@@ -14,7 +14,50 @@ using Random
 using DifferentialEquations
 
 
-function run_sim(method, multicopter, faults, fdi, θs, tf, dir_log;
+"""
+euler = [ψ, θ, ϕ]  # yaw, pitch, roll
+"""
+function distribution_info(manoeuvre::Symbol)
+    p_min, p_max = [-1, -1, -11.0], [1, 1, -9.0]
+    v_min, v_max = nothing, nothing
+    euler_min, euler_max = nothing, nothing
+    ω_min, ω_max = nothing, nothing
+    if manoeuvre == :hovering
+        v_min, v_max = [-1, -1, -1.0], [1, 1, 1.0]
+        euler_min, euler_max = [deg2rad(-5), deg2rad(-5), deg2rad(-5)], [deg2rad(5), deg2rad(5), deg2rad(5)]
+        ω_min, ω_max = [deg2rad(-5), deg2rad(-5), deg2rad(-5)], [deg2rad(5), deg2rad(5), deg2rad(5)]
+    elseif manoeuvre == :forward
+        v_min, v_max = [3, -1, -1.0], [7, 1, 1.0]
+        euler_min, euler_max = [deg2rad(-2), deg2rad(-10), deg2rad(-2)], [deg2rad(2), deg2rad(-5), deg2rad(2)]
+        ω_min, ω_max = [deg2rad(-2), deg2rad(-2), deg2rad(-2)], [deg2rad(2), deg2rad(2), deg2rad(2)]
+    else
+        error("Invalid manoeuvre")
+    end
+    min_nt = (;
+              p=p_min,
+              v=v_min,
+              euler=euler_min,
+              ω=ω_min,
+             )
+    max_nt = (;
+              p=p_max,
+              v=v_max,
+              euler=euler_max,
+              ω=ω_max,
+             )
+    min_nt, max_nt
+end
+
+function sample(multicopter::Multicopter, min_nt, max_nt)
+    p = min_nt.p + (max_nt.p - min_nt.p) .* rand(3)
+    v = min_nt.v + (max_nt.v - min_nt.v) .* rand(3)
+    euler = min_nt.euler + (max_nt.euler - min_nt.euler) .* rand(3)
+    ω = min_nt.ω + (max_nt.ω - min_nt.ω) .* rand(3)
+    R = angle_to_dcm(euler..., :ZYX)
+    (p, v, R, ω,)  # tuple; args_multicopter
+end
+
+function run_sim(method, args_multicopter, multicopter, faults, fdi, θs, tf, dir_log;
         t0=0.0,
         savestep=0.01,
         will_plot=false,
@@ -41,10 +84,10 @@ function run_sim(method, multicopter, faults, fdi, θs, tf, dir_log;
         p0, x0 = nothing, nothing
         if method == :adaptive || method == :adaptive2optim
             p0 = :adaptive
-            x0 = State(env_adaptive)()  # start with adaptive CA
+            x0 = State(env_adaptive)(; args_multicopter=args_multicopter)  # start with adaptive CA
         elseif method == :optim
             p0 = :optim
-            x0 = State(env_optim)()  # start with optim CA
+            x0 = State(env_optim)(; args_multicopter=args_multicopter)  # start with optim CA
         else
             error("Invalid method")
         end
@@ -377,9 +420,10 @@ function main(N=1; collector=tcollect, will_plot=false, seed=2021)
         error("Invalid collector")
     end
     Random.seed!(seed)
-    dir_log = "test/data"
-    method = :adaptive
+    dir_log = "main/data"
     # methods = [:adaptive, :optim, :adaptive2optim]
+    method = :adaptive
+    manoeuvre = :forward
     multicopter = LeeHexacopter()  # dummy
     faults = FaultSet(
                       LoE(3.0, 1, 0.0),
@@ -387,11 +431,14 @@ function main(N=1; collector=tcollect, will_plot=false, seed=2021)
                      )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
     τ = 0.0
     fdi = DelayFDI(τ)
-    θs = [rand(3)]  # constant position tracking
+    θs = [[0, 0, -10.0]]  # constant position tracking
     # θs = [[0, 0, 0], [3, 4, 5], [2, 1, -3]]  # Bezier curve
     tf = 20.0
     # run sim and save fig
-    @time saved_data_array = 1:N |> Map(i -> run_sim(method, multicopter, faults, fdi, θs, tf,
-                                                     joinpath(dir_log, lpad(string(i), 4, '0')); will_plot=will_plot)) |> collector
+    min_nt, max_nt = distribution_info(manoeuvre)
+    x0s = 1:N |> Map(i -> sample(multicopter, min_nt, max_nt)) |> collect
+    @time saved_data_array = zip(1:N, x0s) |> MapSplat((i, x0) ->
+                                                       run_sim(method, x0, multicopter, faults, fdi, θs, tf,
+                                                               joinpath(dir_log, lpad(string(i), 4, '0')); will_plot=will_plot)) |> collector
     nothing
 end

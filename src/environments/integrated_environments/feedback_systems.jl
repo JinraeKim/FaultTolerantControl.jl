@@ -16,7 +16,7 @@ function State(env::DelayFDI_Plant_BacksteppingControl_StaticAllocator_ControlSy
     @unpack controller = control_system
     @unpack m, g = multicopter
     return function (; args_multicopter=())
-        x_plant = State(plant)(args_multicopter...)
+        x_plant = State(plant)(; args_multicopter=args_multicopter)
         pos0 = copy(x_plant.multicopter.p)
         x_cs = State(control_system)(pos0, m, g)
         ComponentArray(plant=x_plant, control_system=x_cs)
@@ -58,7 +58,7 @@ function State(env::DelayFDI_Plant_BacksteppingControl_AdaptiveAllocator_Control
     @unpack controller = control_system
     @unpack m, g = multicopter
     return function (; args_multicopter=())
-        x_plant = State(plant)(args_multicopter...)
+        x_plant = State(plant)(; args_multicopter=args_multicopter)
         pos0 = copy(x_plant.multicopter.p)
         x_cs = State(control_system)(pos0, m, g)
         ComponentArray(plant=x_plant, control_system=x_cs)
