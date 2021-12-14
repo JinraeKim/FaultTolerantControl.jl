@@ -8,10 +8,15 @@
 It is rewritten to be compatible with FlightSims.jl@1.0.0, Julia@1.7.0.
 
 ## FTC using various CA (control allocation) methods
-See `test/CA_backstepping.jl`.
+See `./test/CA_backstepping.jl`.
+Run this at `./`.
 
-![ex_screenshot](./test/data/adaptive/state.png)
-![ex_screenshot](./test/data/adaptive/input.png)
+![ex_screenshot](./data/adaptive/state.png)
+![ex_screenshot](./data/adaptive/input.png)
+
+Parallel trajectory generation; benchmarks with
+i) M1 Macbook Air: 7 threads, about 4s / 7 trajectories
+ii) Ryzen 5900X: 24 threads, about 5s / 24 trajectories
 
 - [ ] Make a trajectory generator; to save trajectory command
 via JLD2 safely (without reconstruction).

@@ -10,15 +10,16 @@ using NumericalIntegration
 using ReferenceFrameRotations
 using StaticArrays: SMatrix
 using DataFrames
+using Random
 
 
-function run_sim(method, multicopter, faults, fdi, pos_cmd_func, tf,
+function run_sim(multicopter, faults, fdi, pos_cmd_func, tf,
         dir_log;
         savestep=0.01,
-        file_name="switching.jld2",
+        will_plot=false,
     )
     mkpath(dir_log)
-    file_path = joinpath(dir_log, file_name)
+    file_path = joinpath(dir_log, "traj.jld2")
     saved_data = nothing
     data_exists = isfile(file_path)
     # if !data_exists
@@ -84,7 +85,7 @@ function run_sim(method, multicopter, faults, fdi, pos_cmd_func, tf,
                               x0, dynamics!, p0;
                               tf=tf,
                              )
-        @time df = solve(simulator;
+        df = solve(simulator;
                          savestep=savestep,
                          # callback=cb,
                         )
@@ -96,10 +97,13 @@ function run_sim(method, multicopter, faults, fdi, pos_cmd_func, tf,
                                    ))
     # end
     saved_data = JLD2.load(file_path)
+    if will_plot
+        plot_figures(dir_log, saved_data, pos_cmd_func)
+    end
 end
 
 
-function plot_figures(method, dir_log, saved_data, pos_cmd_func)
+function plot_figures(dir_log, saved_data, pos_cmd_func)
     @unpack df, dim_input, u_max, u_min = saved_data
     # data
     ts = df.time
@@ -138,8 +142,8 @@ function plot_figures(method, dir_log, saved_data, pos_cmd_func)
     ∫control_squares = _∫control_squares .- _∫control_squares[1]  # to make the first element 0
     _∫control_inf_norms = cumul_integrate(ts, control_inf_norms)  # ∫ u' * u
     ∫control_inf_norms = _∫control_inf_norms .- _∫control_inf_norms[1]
-    @show ∫control_squares[end]
-    @show ∫control_inf_norms[end]
+    # @show ∫control_squares[end]
+    # @show ∫control_inf_norms[end]
     # plots
     ts_tick = ts[1:100:end]
     tstr = ts_tick |> Map(t -> @sprintf("%0.0f", t)) |> collect
@@ -305,35 +309,35 @@ function plot_figures(method, dir_log, saved_data, pos_cmd_func)
           color=:red,
           ls=:dash,
          )
-    ## figure zoom
-    if method != :adaptive
-        # fault 1
-        t1_min, t1_max = 2, 4
-        idx1 = findall(t -> t > t1_min && t < t1_max, ts)
-        ts_idx1 = ts[idx1]
-        Ms_idx1 = Ms[idx1]
-        Mds_idx1 = Mds[idx1]
-        @show size(ts_idx1)
-        @show size(hcat(Mds_idx1...)')
-        plot!(p_M, [ts_idx1 ts_idx1], [hcat(Ms_idx1...)' hcat(Mds_idx1...)'];
-              inset = (1, bbox(0.1, 0.05, 0.3, 0.3)), subplot=2,
-              ylim=(-5, 5), bg_inside=nothing, label=nothing,
-              color=[:black :red], linestyle=[:solid :dash],
-             )
-        # fault 2
-        t2_min, t2_max = 4, 6
-        idx2 = findall(t -> t > t2_min && t < t2_max, ts)
-        ts_idx2 = ts[idx2]
-        Ms_idx2 = Ms[idx2]
-        Mds_idx2 = Mds[idx2]
-        @show size(ts_idx2)
-        @show size(hcat(Mds_idx2...)')
-        plot!(p_M, [ts_idx2 ts_idx2], [hcat(Ms_idx2...)' hcat(Mds_idx2...)'];
-              inset = (1, bbox(0.5, 0.05, 0.3, 0.3)), subplot=3,
-              ylim=(-5, 5), bg_inside=nothing, label=nothing,
-              color=[:black :red], linestyle=[:solid :dash],
-             )
-    end
+    # ## figure zoom
+    # if method != :adaptive
+    #     # fault 1
+    #     t1_min, t1_max = 2, 4
+    #     idx1 = findall(t -> t > t1_min && t < t1_max, ts)
+    #     ts_idx1 = ts[idx1]
+    #     Ms_idx1 = Ms[idx1]
+    #     Mds_idx1 = Mds[idx1]
+    #     @show size(ts_idx1)
+    #     @show size(hcat(Mds_idx1...)')
+    #     plot!(p_M, [ts_idx1 ts_idx1], [hcat(Ms_idx1...)' hcat(Mds_idx1...)'];
+    #           inset = (1, bbox(0.1, 0.05, 0.3, 0.3)), subplot=2,
+    #           ylim=(-5, 5), bg_inside=nothing, label=nothing,
+    #           color=[:black :red], linestyle=[:solid :dash],
+    #          )
+    #     # fault 2
+    #     t2_min, t2_max = 4, 6
+    #     idx2 = findall(t -> t > t2_min && t < t2_max, ts)
+    #     ts_idx2 = ts[idx2]
+    #     Ms_idx2 = Ms[idx2]
+    #     Mds_idx2 = Mds[idx2]
+    #     @show size(ts_idx2)
+    #     @show size(hcat(Mds_idx2...)')
+    #     plot!(p_M, [ts_idx2 ts_idx2], [hcat(Ms_idx2...)' hcat(Mds_idx2...)'];
+    #           inset = (1, bbox(0.5, 0.05, 0.3, 0.3)), subplot=3,
+    #           ylim=(-5, 5), bg_inside=nothing, label=nothing,
+    #           color=[:black :red], linestyle=[:solid :dash],
+    #          )
+    # end
     ### inputs
     # p_input = plot(p_u, p_ν, p_method;
     p_input = plot(p_u, p_F, p_M;
@@ -361,11 +365,11 @@ function plot_figures(method, dir_log, saved_data, pos_cmd_func)
 end
 
 
-function main()
+function main(; seed=2021)
+    Random.seed!(seed)
     dir_log = "test/data"
-    mkpath(dir_log)
     # methods = [:adaptive, :optim, :adaptive2optim]
-    method = :adaptive
+    # method = :adaptive
     # _multicopter = LeeHexacopter()
     # u_max = (1/3) * _multicopter.m * _multicopter.g * ones(_multicopter.dim_input)
     # multicopter = LeeHexacopter(u_max=u_max)
@@ -374,13 +378,13 @@ function main()
                       LoE(3.0, 1, 0.0),  # t, index, level
                       # LoE(5.0, 3, 0.1),
                      )  # Note: antisymmetric configuration of faults can cause undesirable control allocation; sometimes it is worse than multiple faults of rotors in symmetric configuration.
-    τ = 0.2
+    τ = 0.0
     fdi = DelayFDI(τ)
     pos_cmd_func = (t) -> [2, 1, -3]
     tf = 15.0
     # run sim and save fig
-    _dir_log = joinpath(dir_log, String(method))
-    saved_data = run_sim(method, multicopter, faults, fdi, pos_cmd_func, tf, _dir_log;
-                        )
-    plot_figures(method, _dir_log, saved_data, pos_cmd_func)
+    N = 7
+    @time saved_data_array = 1:N |> Map(i -> run_sim(multicopter, faults, fdi, pos_cmd_func, tf,
+                                                     joinpath(dir_log, lpad(string(i), 4, '0')))) |> tcollect
+    nothing
 end
