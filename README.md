@@ -22,7 +22,11 @@ Note that the benchmark results may be outdated.
 ## To-do
 - [x] Make a trajectory generator; to save trajectory command
 via JLD2 safely (without reconstruction).
+- [ ] Complete the main script for the second-year report; see [the related project](https://github.com/JinraeKim/FaultTolerantControl.jl/projects/4).
 - [ ] Calculate objective functional
 
 ### Notes
-Previously written examples are deprecated; see previous versions, e.g., FaultTolerantControl@0.2.0.
+- Previously written examples are deprecated; see previous versions, e.g., FaultTolerantControl@0.2.0.
+
+### Funding
+This research was supported by Unmanned Vehicles Core Technology Research and Development Program through the National Research Foundation of Korea (NRF) and Unmanned Vehicle Advanced Research Center (UVARC) funded by the Ministry of Science and ICT, the Republic of Korea (2020M3C1C1A01083162).
