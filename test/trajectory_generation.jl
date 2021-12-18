@@ -9,8 +9,10 @@ function main()
     θ = [[0, 0], [0.3, 0.1], [0.5, 0.2], [0.7, 0.3], [1, 1]]
     θ_x = θ |> Map(_θ -> _θ[1]) |> collect
     θ_y = θ |> Map(_θ -> _θ[2]) |> collect
-    curve = Bezier(θ)
-    curve_params = 0.0:0.01:1.0
+    t0 = 0.0
+    tf = 1.0
+    curve = Bezier(θ, t0, tf)
+    curve_params = t0:0.01:tf
     points = curve_params |> Map(curve) |> collect
     points_x = points |> Map(point -> point[1]) |> collect
     points_y = points |> Map(point -> point[2]) |> collect
