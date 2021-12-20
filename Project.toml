@@ -20,6 +20,7 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 [compat]
 ComponentArrays = "0.11"
 Convex = "0.14"
+FlightSims = "1.0"
 MatrixEquations = "2.1"
 Reexport = "1.2"
 SCS = "0.8"
