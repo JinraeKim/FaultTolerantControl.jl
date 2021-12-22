@@ -4,8 +4,10 @@ FDI with simple time delay.
 """
 struct DelayFDI <: AbstractFDI
     τ
-    function DelayFDI(τ)
-        τ == 0.0 ? @warn("no delay") : nothing
+    function DelayFDI(τ; verbose=false)
+        if verbose && τ == 0.0
+            @warn("no delay")
+        end
         @assert τ >= 0
         new(τ)
     end
