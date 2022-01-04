@@ -24,6 +24,9 @@ export AbstractFDI, LPFFDI, DelayFDI
 export PseudoInverseAllocator, ConstrainedAllocator, AdaptiveAllocator
 # trajectory generation
 export Bezier
+# cost functional
+export PositionAngularVelocityCostFunctional
+export cost
 
 
 include("utils.jl")
