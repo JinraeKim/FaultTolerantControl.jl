@@ -1,6 +1,9 @@
 abstract type AbstractCostFunctional end
 
 
+"""
+Default weight: 1 for position, (1/π^2) for angular velocity (1 m ≈ 180 deg)
+"""
 struct PositionAngularVelocityCostFunctional <: AbstractCostFunctional
     Q_p::AbstractMatrix
     Q_ω::AbstractMatrix
@@ -8,7 +11,7 @@ struct PositionAngularVelocityCostFunctional <: AbstractCostFunctional
     F_ω::AbstractMatrix
     function PositionAngularVelocityCostFunctional(
             Q_p=Matrix(I, 3, 3), Q_ω=Matrix(I, 3, 3),
-            F_p=Matrix(I, 3, 3), F_ω=Matrix(I, 3, 3),
+            F_p=(1/π^2)*Matrix(I, 3, 3), F_ω=(1/π^2)*Matrix(I, 3, 3),
         )
         new(Q_p, Q_ω, F_p, F_ω)
     end
