@@ -14,6 +14,7 @@ using Convex, Mosek, MosekTools
 using Transducers, UnPack, ComponentArrays
 import SplitApplyCombine
 import MatrixEquations
+using NumericalIntegration
 
 # Fault
 export AbstractFault, FaultSet
@@ -24,9 +25,13 @@ export AbstractFDI, LPFFDI, DelayFDI
 export PseudoInverseAllocator, ConstrainedAllocator, AdaptiveAllocator
 # trajectory generation
 export Bezier
+# cost functional
+export PositionAngularVelocityCostFunctional
+export cost
 
 
 include("utils.jl")
+include("costs.jl")
 include("faults.jl")
 include("environments/environments.jl")
 include("trajectory_generation.jl")
