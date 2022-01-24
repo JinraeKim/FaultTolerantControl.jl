@@ -15,6 +15,7 @@ using Transducers, UnPack, ComponentArrays
 import SplitApplyCombine
 import MatrixEquations
 using NumericalIntegration
+using ControlSystems: ss, gram
 
 # Fault
 export AbstractFault, FaultSet
@@ -28,10 +29,13 @@ export Bezier
 # cost functional
 export PositionAngularVelocityCostFunctional
 export cost
+# reconfigurability
+export ssom
 
 
 include("utils.jl")
 include("costs.jl")
+include("reconfigurability.jl")
 include("faults.jl")
 include("environments/environments.jl")
 include("trajectory_generation.jl")

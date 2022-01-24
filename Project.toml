@@ -5,6 +5,7 @@ version = "0.3.2"
 
 [deps]
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
+ControlSystems = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
 Convex = "f65535da-76fb-5f13-bab9-19810c17039a"
 FlightSims = "a4c2f6ca-3fbe-4430-8ede-32935de4c069"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
