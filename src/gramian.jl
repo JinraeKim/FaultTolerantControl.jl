@@ -111,5 +111,5 @@ function ssp2(f::Function, g::Function, dt, tf, x0, u, p; STAGES=3)
         xk1 = xk2
         y[:,k] = g(xk1, uk, p, tk)
     end
-    y
+	y
 end
