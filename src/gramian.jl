@@ -38,6 +38,48 @@ function empirical_ctrl_gramian(f, s; dt::Real, tf::Real, pr::Matrix, xs::Vector
 end
 
 """
+	empirical_obsv_gramian()
+
+A function for computation of observability gramian.
+
+# Notes
+- pr = parameter vector(s), each column i sone parameter sample
+- xs = steady-state and nominal initial state x_0
+- us = steady-state input
+"""
+function empirical_obsv_gramian(f, g, s; dt::Real, tf::Real, pr::Matrix, xs::Vector, us::Vector)
+	M, N, L = s
+	P, K = size(pr)
+	up = t -> us
+	R = L
+
+	xm = ones(N, 1) * Matrix([-1 1])  # initial-state scales
+
+	A = size(xm)[1]  # Number of total states
+	D = size(xm)[2]  # Number of state scales sets
+
+	Wo = 0
+    o = zeros(R*Int(floor(tf / dt) + 1), A)
+    for k = 1:K
+		for d = 1:D
+			for a = 1:A
+				if xm[a, d] != 0
+					en = zeros(N+P)
+					en[a] = xm[a, d]
+					xnd = xs + en[1:N]
+					pnd = pr[:, k] + en[N+1:end]
+					y = ssp2(f, g, dt, tf, xnd, up, pnd)
+					y = y ./ xm[a, d]
+					o[:, a] = y'
+				end
+			end
+			Wo = Wo .+ o' * o
+        end
+    end
+    Wo = Wo * (dt / (D * K))
+end
+
+"""
 	ssp2()
 
 A function for Low-Storage Strong-Stability-Preserving Second-Order Runge-Kutta.

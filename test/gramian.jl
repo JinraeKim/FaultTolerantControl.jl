@@ -20,4 +20,5 @@ using Test
 	u0 = [0.0]
 
 	Wc = empirical_ctrl_gramian(f, [m, n, l]; dt=0.01, tf=1.0, pr=zeros(4, 1), xs=x0)
+	Wo = empirical_obsv_gramian(f, g, [m, n, l]; dt=0.01, tf=1.0, pr=zeros(4, 1), xs=x0, us=u0)
 end
