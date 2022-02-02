@@ -31,6 +31,7 @@ export PositionAngularVelocityCostFunctional
 export cost
 # reconfigurability
 export ssom
+export empirical_ctrl_gramian, empirical_obsv_gramian
 
 
 include("utils.jl")
@@ -39,6 +40,7 @@ include("reconfigurability.jl")
 include("faults.jl")
 include("environments/environments.jl")
 include("trajectory_generation.jl")
+include("gramian.jl")
 
 
 end
