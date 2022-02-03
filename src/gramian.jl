@@ -13,13 +13,13 @@ function empirical_ctrl_gramian(f, s; dt::Real, tf::Real, pr::Matrix, xs::Vector
 	P, K = size(pr)
 	ut = t -> (t <= dt) / dt
 	G(x, u, p, t) = x
-
+	
 	um = ones(M, 1) * Matrix([-1 1])  # input scales
-
+	
 	C = size(um)[2]  # Number of input scales sets
 	
-    Wc = 0
-    for k = 1:K
+	Wc = 0
+	for k = 1:K
 		for c = 1:C
 			for m = 1:M
 				if um[m, c] != 0
@@ -31,15 +31,15 @@ function empirical_ctrl_gramian(f, s; dt::Real, tf::Real, pr::Matrix, xs::Vector
 					x = x ./ um[m, c]
 					Wc = Wc .+ x * x'  # Question(why is this different dot(x, x')?)
 				end
-	    	end
-        end
-    end
-    Wc = Wc * (dt / (C * K))
+			end
+		end
+	end
+	Wc = Wc * (dt / (C * K))
 end
 
 """
 	empirical_obsv_gramian()
-
+	
 A function for computation of observability gramian.
 
 # Notes
@@ -59,8 +59,8 @@ function empirical_obsv_gramian(f, g, s; dt::Real, tf::Real, pr::Matrix, xs::Vec
 	D = size(xm)[2]  # Number of state scales sets
 
 	Wo = 0
-    o = zeros(R*Int(floor(tf / dt) + 1), A)
-    for k = 1:K
+	o = zeros(R*Int(floor(tf / dt) + 1), A)
+	for k = 1:K
 		for d = 1:D
 			for a = 1:A
 				if xm[a, d] != 0
@@ -74,9 +74,9 @@ function empirical_obsv_gramian(f, g, s; dt::Real, tf::Real, pr::Matrix, xs::Vec
 				end
 			end
 			Wo = Wo .+ o' * o
-        end
-    end
-    Wo = Wo * (dt / (D * K))
+		end
+	end
+	Wo = Wo * (dt / (D * K))
 end
 
 """
