@@ -72,16 +72,16 @@ function empirical_gramian(f::Function, g::Function, M::Int, N::Int, L::Int; opt
 end
 
 """
-	min_HSV()
+    min_HSV()
 
 A function for computation of minimum Hankel Singular Value (HSV).
 """
 function min_HSV(Wc, Wo)
-	min_HSV = Wc*Wo |> LinearAlgebra.eigvals |> minimum |> sqrt
+    min_HSV = Wc*Wo |> LinearAlgebra.eigvals |> minimum |> sqrt
 end
 
 """
-	ssp2()
+    ssp2()
 
 A function for Low-Storage Strong-Stability-Preserving Second-Order Runge-Kutta.
 
@@ -111,5 +111,5 @@ function ssp2(f::Function, g::Function, dt, tf, x0, u, p; STAGES=3)
         xk1 = xk2
         y[:,k] = g(xk1, uk, p, tk)
     end
-	y
+    y
 end
