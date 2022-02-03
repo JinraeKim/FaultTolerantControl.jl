@@ -88,24 +88,24 @@ A function for Low-Storage Strong-Stability-Preserving Second-Order Runge-Kutta.
 - STAGES = Configurable number of stages for enhanced stability
 """
 function ssp2(f, g, dt, tf, x0, u, p; STAGES=3)
-    nt = Int(floor(tf / dt) + 1)
-    y0 = g(x0, u(0), p, 0)
-    y = zeros(length(y0), nt)  
-    y[:,1] = y0
+	nt = Int(floor(tf / dt) + 1)
+	y0 = g(x0, u(0), p, 0)
+	y = zeros(length(y0), nt)  
+	y[:,1] = y0
 
-    xk1 = x0
-    xk2 = x0
-    for k = 2:nt
-        tk = (k - 1.5) * dt
-        uk = u(tk)
-        for s = 1:(STAGES - 1)
-            xk1 = xk1 + (dt / (STAGES - 1)) * f(xk1, uk, p, tk)
-        end
-        xk2 = xk2 + dt * f(xk1, uk, p, tk)
-        xk2 = xk2 / STAGES
-        xk2 = xk2 + xk1 * ((STAGES - 1) / STAGES)
-        xk1 = xk2
-        y[:,k] = g(xk1, uk, p, tk)
-    end
+	xk1 = x0
+	xk2 = x0
+	for k = 2:nt
+		tk = (k - 1.5) * dt
+		uk = u(tk)
+		for s = 1:(STAGES - 1)
+			xk1 = xk1 + (dt / (STAGES - 1)) * f(xk1, uk, p, tk)
+		end
+		xk2 = xk2 + dt * f(xk1, uk, p, tk)
+		xk2 = xk2 / STAGES
+		xk2 = xk2 + xk1 * ((STAGES - 1) / STAGES)
+		xk1 = xk2
+		y[:,k] = g(xk1, uk, p, tk)
+	end
 	y
 end
