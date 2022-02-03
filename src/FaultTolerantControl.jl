@@ -31,7 +31,7 @@ export PositionAngularVelocityCostFunctional
 export cost
 # reconfigurability
 export ssom
-export empirical_ctrl_gramian, empirical_obsv_gramian
+export empirical_gramian
 
 
 include("utils.jl")

@@ -1,82 +1,74 @@
 """
-    empirical_ctrl_gramian()
+    empirical_gramian()
 
-A function for computation of controllability gramian.
+A function for computation of controllability or observability gramian.
 
 # Notes
+- f = function of (x, u, p, t)
+- g = function of (x, u, p, t)
 - pr = parameter vector(s), each column i sone parameter sample
 - xs = steady-state and nominal initial state x_0
 - us = steady-state input
+- opt = :c for controllability gramian and :o for observability gramian
 """
-function empirical_ctrl_gramian(f, s; dt::Real, tf::Real, pr::Matrix, xs::Vector)
-    M, N, L = s
+function empirical_gramian(f::Function, g::Function, M::Int, N::Int, L::Int; opt::Symbol, dt::Real, tf::Real, pr::Matrix, xs::Vector, us::Vector)
+    @assert dt > 0 && tf > dt
     P, K = size(pr)
     ut = t -> (t <= dt) / dt
-    G(x, u, p, t) = x
-    
-    um = ones(M, 1) * Matrix([-1 1])  # input scales
-    
-    C = size(um)[2]  # Number of input scales sets
-    
-    Wc = 0
-    for k = 1:K
-        for c = 1:C
-            for m = 1:M
-                if um[m, c] != 0
-                    em = zeros(M+P)
-                    em[m] = um[m, c]
-                    umc(t) = ut(t) .* em[1:M]
-                    pmc = pr[:, k] + em[M+1:end]
-                    x = ssp2(f, G, dt, tf, xs, umc, pmc)
-                    x = x ./ um[m, c]
-                    Wc = Wc .+ x * x'  # Question(why is this different dot(x, x')?)
-                end
-            end
-        end
-    end
-    Wc = Wc * (dt / (C * K))
-end
-
-"""
-    empirical_obsv_gramian()
-    
-A function for computation of observability gramian.
-
-# Notes
-- pr = parameter vector(s), each column i sone parameter sample
-- xs = steady-state and nominal initial state x_0
-- us = steady-state input
-"""
-function empirical_obsv_gramian(f, g, s; dt::Real, tf::Real, pr::Matrix, xs::Vector, us::Vector)
-    M, N, L = s
-    P, K = size(pr)
     up = t -> us
     R = L
-
+    G(x, u, p, t) = x
+    
     xm = ones(N, 1) * Matrix([-1 1])  # initial-state scales
-
+    um = ones(M, 1) * Matrix([-1 1])  # input scales
+    
     A = size(xm)[1]  # Number of total states
+    C = size(um)[2]  # Number of input scales sets
     D = size(xm)[2]  # Number of state scales sets
-
-    Wo = 0
-    o = zeros(R*Int(floor(tf / dt) + 1), A)
-    for k = 1:K
-        for d = 1:D
-            for a = 1:A
-                if xm[a, d] != 0
-                    en = zeros(N+P)
-                    en[a] = xm[a, d]
-                    xnd = xs + en[1:N]
-                    pnd = pr[:, k] + en[N+1:end]
-                    y = ssp2(f, g, dt, tf, xnd, up, pnd)
-                    y = y ./ xm[a, d]
-                    o[:, a] = y'
+    
+    if opt === :c
+        # Empirical_ctrl_gramian
+        Wc = 0
+        for k = 1:K
+            for c = 1:C
+                for m = 1:M
+                    if um[m, c] != 0
+                        em = zeros(M+P)
+                        em[m] = um[m, c]
+                        umc(t) = ut(t) .* em[1:M]
+                        pmc = pr[:, k] + em[M+1:end]
+                        x = ssp2(f, G, dt, tf, xs, umc, pmc)
+                        x = x ./ um[m, c]
+                        Wc = Wc .+ x * x'  # Question(why is this different dot(x, x')?)
+                    end
                 end
             end
-            Wo = Wo .+ o' * o
         end
+        Wc = Wc * (dt / (C * K))
+    elseif opt === :o
+        # Empirical_obsv_gramian
+        Wo = 0
+        o = zeros(R*Int(floor(tf / dt) + 1), A)
+        for k = 1:K
+            for d = 1:D
+                for a = 1:A
+                    if xm[a, d] != 0
+                        en = zeros(N+P)
+                        en[a] = xm[a, d]
+                        xnd = xs + en[1:N]
+                        pnd = pr[:, k] + en[N+1:end]
+                        y = ssp2(f, g, dt, tf, xnd, up, pnd)
+                        y = y ./ xm[a, d]
+                        o[:, a] = y'
+                    end
+                end
+                Wo = Wo .+ o' * o
+            end
+        end
+        Wo = Wo * (dt / (D * K))
+    else
+        error("opt must be either :c for controllability gramian, or :o for observability gramian")
     end
-    Wo = Wo * (dt / (D * K))
 end
 
 """
@@ -86,9 +78,12 @@ A function for Low-Storage Strong-Stability-Preserving Second-Order Runge-Kutta.
 
 # Notes
 - STAGES = Configurable number of stages for enhanced stability
+- f = function of (x, u, p, t)
+- g = function of (x, u, p, t)
 """
-function ssp2(f, g, dt, tf, x0, u, p; STAGES=3)
+function ssp2(f::Function, g::Function, dt, tf, x0, u, p; STAGES=3)
     nt = Int(floor(tf / dt) + 1)
+    @assert nt > 0
     y0 = g(x0, u(0), p, 0)
     y = zeros(length(y0), nt)  
     y[:,1] = y0
