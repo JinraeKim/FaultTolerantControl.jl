@@ -30,9 +30,9 @@ using Test
     n = size(B)[1]
     ssom_min = ssom(A, B, C, D)
     @test ssom_min >= 10 && ssom_min < 12
-end
 
-@testset "reconfigurability" begin
+    # # Refs
+    # [2] https://github.com/gramian/emgr
     A = -Matrix(I, 4, 4)
     B = [0.0 1.0 0.0 1.0]'
     C = [0.0 0.0 1.0 1.0]
