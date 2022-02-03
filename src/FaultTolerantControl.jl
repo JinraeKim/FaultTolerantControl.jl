@@ -40,7 +40,6 @@ include("reconfigurability.jl")
 include("faults.jl")
 include("environments/environments.jl")
 include("trajectory_generation.jl")
-include("reconfigurability.jl")
 
 
 end
