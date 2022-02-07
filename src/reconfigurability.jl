@@ -83,7 +83,8 @@ function empirical_gramian(f::Function, g::Function, M::Int, N::Int, L::Int; opt
                         pnd = pr[:, k] + en[N+1:end]
                         y = ssp2(f, g, dt, tf, xnd, up, pnd)
                         y = y ./ xm[a, d]
-                        o[:, a] = y'
+                        # o[:, a] = y'
+                        o[:, a] = vec(y)
                     end
                 end
                 Wo = Wo .+ o' * o
