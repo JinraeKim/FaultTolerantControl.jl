@@ -53,6 +53,6 @@ end
     Wc = empirical_gramian(f, g, m, n, l; opt=:c, dt=0.01, tf=1.0, pr=zeros(4, 1), xs=x0, us=u0)
     Wo = empirical_gramian(f, g, m, n, l; opt=:o, dt=0.01, tf=1.0, pr=zeros(4, 1), xs=x0, us=u0)
 	minHSV = min_HSV(Wc, Wo)
-	@show Wc Wo minHSV
+    @show Wc Wo minHSV
     @test Wc != nothing && Wo != nothing
 end
