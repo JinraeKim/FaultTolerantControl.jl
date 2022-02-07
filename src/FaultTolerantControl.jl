@@ -30,8 +30,7 @@ export Bezier
 export PositionAngularVelocityCostFunctional
 export cost
 # reconfigurability
-export ssom
-export empirical_gramian
+export ssom, empirical_gramian, min_HSV
 
 
 include("utils.jl")
