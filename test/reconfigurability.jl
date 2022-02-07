@@ -1,4 +1,5 @@
 using FaultTolerantControl
+using ControlSystems: ss, gram
 using LinearAlgebra
 using Test
 
@@ -38,6 +39,7 @@ end
     A = -Matrix(I, 4, 4)
     B = [0.0 1.0 0.0 1.0]'
     C = [0.0 0.0 1.0 1.0]
+    D = [0]
 
     f(x, u, p, t) = A*x + B*u .+ p
     g(x, u, p, t) = C*x
@@ -50,9 +52,12 @@ end
     x0 = [0.0, 0.0, 0.0, 0.0]
     u0 = [0.0]
 
-    Wc = empirical_gramian(f, g, m, n, l; opt=:c, dt=0.01, tf=1.0, pr=zeros(4, 1), xs=x0, us=u0)
-    Wo = empirical_gramian(f, g, m, n, l; opt=:o, dt=0.01, tf=1.0, pr=zeros(4, 1), xs=x0, us=u0)
-    minHSV = min_HSV(Wc, Wo)
-    @show Wc Wo minHSV
-    @test Wc != nothing && Wo != nothing
+    empirical_Wc = empirical_gramian(f, g, m, n, l; opt=:c, dt=0.01, tf=1.0, pr=zeros(4, 1), xs=x0, us=u0)
+    empirical_Wo = empirical_gramian(f, g, m, n, l; opt=:o, dt=0.01, tf=1.0, pr=zeros(4, 1), xs=x0, us=u0)
+	minHSV = min_HSV(Wc, Wo)
+	@show empirical_Wc empirical_Wo minHSV
+    sys = ss(A, B, C, D)
+    Wc = gram(sys, :c)
+    Wo = gram(sys, :o)
+    @test norm(Wc-empirical_Wc) < 1.0 && norm(Wo-empirical_Wo) < 1.0
 end
