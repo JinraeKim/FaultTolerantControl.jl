@@ -54,11 +54,12 @@ end
 
     empirical_Wc = empirical_gramian(f, g, m, n, l; opt=:c, dt=0.01, tf=5.0, pr=zeros(4, 1), xs=x0, us=u0)
     empirical_Wo = empirical_gramian(f, g, m, n, l; opt=:o, dt=0.01, tf=5.0, pr=zeros(4, 1), xs=x0, us=u0)
-	minHSV = min_HSV(Wc, Wo)
-	@show empirical_Wc empirical_Wo minHSV
+    minHSV = min_HSV(empirical_Wc, empirical_Wo)
+    # @show empirical_Wc empirical_Wo minHSV
     sys = ss(A, B, C, D)
     Wc = gram(sys, :c)
     Wo = gram(sys, :o)
-    @show Wc Wo
-    @test norm(Wc-empirical_Wc) < 1.0 && norm(Wo-empirical_Wo) < 1.0
+    eps = 1e-2
+    @test isapprox(norm(empirical_Wc), norm(Wc), atol=eps)
+    @test isapprox(norm(empirical_Wo), norm(Wo), atol=eps)
 end
