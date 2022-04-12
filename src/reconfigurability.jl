@@ -35,7 +35,7 @@ A function for computation of controllability or observability gramian.
 - us = steady-state input
 - opt = :c for controllability gramian and :o for observability gramian
 """
-function empirical_gramian(f::Function, g::Function, M::Int, N::Int, L::Int; opt::Symbol, dt::Real, tf::Real, pr::Matrix, xs::Vector, us::Vector)
+function empirical_gramian(f::Function, g::Function, M::Int, N::Int, L::Int; opt::Symbol, dt::Real, tf::Real, pr::Matrix, xs::Vector, us::Vector, xm=1.0, um=1.0)
     @assert dt > 0 && tf > dt
     P, K = size(pr)
     ut = t -> (t <= dt) / dt
@@ -43,8 +43,8 @@ function empirical_gramian(f::Function, g::Function, M::Int, N::Int, L::Int; opt
     R = L
     G(x, u, p, t) = x
     
-    xm = ones(N, 1) * Matrix([-1 1])  # initial-state scales
-    um = ones(M, 1) * Matrix([-1 1])  # input scales
+    xm = ones(N, 1) * Matrix([-xm xm])  # initial-state scales
+    um = ones(M, 1) * Matrix([-um um])  # input scales
     
     A = size(xm)[1]  # Number of total states
     C = size(um)[2]  # Number of input scales sets
