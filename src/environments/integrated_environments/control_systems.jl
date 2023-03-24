@@ -40,7 +40,7 @@ end
 
 function State(cs::BacksteppingControl_AdaptiveAllocator_ControlSystem)
     @unpack controller, allocator = cs
-    return function (pos0, m, g; Θ̂=zeros(6, 4))
+    return function (pos0, m, g; Θ̂=zeros(size(allocator.B')))
         x_controller = State(controller)(pos0, m, g)
         x_allocator = State(allocator)(Θ̂)
         ComponentArray(controller=x_controller, allocator=x_allocator)
